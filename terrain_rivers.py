@@ -47,6 +47,9 @@ model.calculate_flow()
 print('Advection 1')
 model.advection(2)
 
+print('Isostatic equilibration 1')
+model.adjust_isostasy()
+
 print('Flow calculation 2')
 model.calculate_flow()
 
@@ -55,6 +58,9 @@ model.diffusion(4)
 
 print('Advection 2')
 model.advection(2)
+
+print('Isostatic equilibration 2')
+model.adjust_isostasy()
 
 print('Flow calculation 3')
 model.calculate_flow()

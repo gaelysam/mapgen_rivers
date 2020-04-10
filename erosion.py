@@ -47,14 +47,15 @@ def diffusion(dem, time, d=1):
     return im.gaussian_filter(dem, radius, mode='reflect')
 
 class EvolutionModel:
-    def __init__(self, dem, K=1, m=0.5, d=1, sea_level=0, flow=False):
+    def __init__(self, dem, K=1, m=0.5, d=1, sea_level=0, flow=False, flex_radius=100):
         self.dem = dem
         #self.bedrock = dem
         self.K = K
         self.m = m
         self.d = d
         self.sea_level = sea_level
-        #self.ref_isostasy = im.gaussian_filter(dem, radius, mode='reflect')
+        self.flex_radius = flex_radius
+        self.define_isostasy()
         if flow:
             self.calculate_flow()
         else:
@@ -75,3 +76,11 @@ class EvolutionModel:
     def diffusion(self, time):
         self.dem = diffusion(self.dem, time, d=self.d)
         self.flow_uptodate = False
+
+    def define_isostasy(self):
+        self.ref_isostasy = im.gaussian_filter(self.dem, self.flex_radius, mode='reflect')
+
+    def adjust_isostasy(self, rate=1):
+        isostasy = im.gaussian_filter(self.dem, self.flex_radius, mode='reflect')
+        correction = (self.ref_isostasy - isostasy) * rate
+        self.dem = self.dem + correction
