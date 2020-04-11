@@ -18,11 +18,13 @@ neighbours_dirs = np.array([
 
 neighbours_pattern = neighbours_dirs > 0
 
-def flow_dirs_lakes(dem):
+def flow_dirs_lakes(dem, random=0.0625):
     (Y, X) = dem.shape
 
     dem_margin = np.zeros((Y+2, X+2))
     dem_margin[1:-1,1:-1] = dem
+    if random > 0:
+        dem_margin += np.random.random(dem_margin.shape) * random
 
     # Initialize: list map borders
     borders = []
@@ -72,7 +74,7 @@ def accumulate(dirs, dem=None):
     (Y, X) = dirs.shape
     dirs_margin = np.zeros((Y+2,X+2))-1
     dirs_margin[1:-1,1:-1] = dirs
-    quantity = np.zeros((Y, X), dtype='u4')
+    quantity = np.zeros((Y, X), dtype='i4')
 
     def calculate_quantity(y, x):
         if quantity[y,x] > 0:
