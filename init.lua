@@ -1,6 +1,7 @@
 local modpath = minetest.get_modpath(minetest.get_current_modname()) .. '/'
 local worldpath = minetest.get_worldpath() .. '/'
 local load_map = dofile(modpath .. 'load.lua')
+local geometry = dofile(modpath .. 'geometry.lua')
 
 local function copy_if_needed(filename)
 	local wfilename = worldpath..filename
@@ -31,19 +32,37 @@ local links = load_map(worldpath..'links', 1, false)
 copy_if_needed('rivers')
 local rivers = load_map(worldpath..'rivers', 4, false)
 
+copy_if_needed('offset_x')
+local offset_x = load_map(worldpath..'offset_x', 1, true)
+for k, v in ipairs(offset_x) do
+	offset_x[k] = (v+0.5)/256
+end
+
+copy_if_needed('offset_y')
+local offset_z = load_map(worldpath..'offset_y', 1, true)
+for k, v in ipairs(offset_z) do
+	offset_z[k] = (v+0.5)/256
+end
+
+
 local function index(x, z)
 	return z*X+x+1
 end
 
+local function get_point_location(x, z)
+	local i = index(x, z)
+	return x+offset_x[i], z+offset_z[i]
+end
+
 local function interp(v00, v01, v10, v11, xf, zf)
-	v0 = v01*xf + v00*(1-xf)
-	v1 = v11*xf + v10*(1-xf)
+	local v0 = v01*xf + v00*(1-xf)
+	local v1 = v11*xf + v10*(1-xf)
 	return v1*zf + v0*(1-zf)
 end
 
 local data = {}
 
-local blocksize = 6
+local blocksize = 20
 local sea_level = 1
 local min_catchment = 25
 
@@ -82,15 +101,62 @@ local function generate(minp, maxp, seed)
 		for z = minp.z, maxp.z do
 			local xb = x/blocksize
 			local zb = z/blocksize
+			local xc = math.floor(xb+0.5)
+			local zc = math.floor(zb+0.5)
 
-			if xb >= 0 and xb < X-1 and zb >= 0 and zb < Z-1 then
-				local x0 = math.floor(xb)
+			local x0, z0
+			if xc >= 0 and zc >= 0 and xc < X and zc < Z then
+				local xoff, zoff = get_point_location(xc, zc)
+				local north, east, south, west
+				if xc > 0 then
+					local x1off, z1off = get_point_location(xc-1, zc)
+					west = geometry.area({xoff, x1off, xb}, {zoff, z1off, zb}) <= 0
+				else
+					west = zb > zoff
+				end
+				if zc > 0 then
+					local x2off, z2off = get_point_location(xc, zc-1)
+					north = geometry.area({xoff, x2off, xb}, {zoff, z2off, zb}) <= 0
+				else
+					north = xb > xoff
+				end
+				if xc < X-1 then
+					local x3off, z3off = get_point_location(xc+1, zc)
+					east = geometry.area({xoff, x3off, xb}, {zoff, z3off, zb}) <= 0
+				else
+					east = zb < zoff
+				end
+				if zc < Z-1 then
+					local x4off, z4off = get_point_location(xc, zc+1)
+					south = geometry.area({xoff, x4off, xb}, {zoff, z4off, zb}) <= 0
+				else
+					south = xb < xoff
+				end
+
+				if west and not north then
+					x0, z0 = xc-1, zc-1
+				elseif north and not east then
+					x0, z0 = xc, zc-1
+				elseif east and not south then
+					x0, z0 = xc, zc
+				elseif south and not west then
+					x0, z0 = xc-1, zc
+				else
+					x0, z0 = xc, zc
+				end
+			end
+
+			if x0 and z0 and x0 >= 0 and x0 < X-1 and z0 >= 0 and z0 < Z-1 then
 				local x1 = x0+1
-				local z0 = math.floor(zb)
 				local z1 = z0+1
-
-				local xf = xb - x0
-				local zf = zb - z0
+				local xf, zf
+				do
+					local xA, zA = get_point_location(x0, z0)
+					local xB, zB = get_point_location(x0, z1)
+					local xC, zC = get_point_location(x1, z1)
+					local xD, zD = get_point_location(x1, z0)
+					xf, zf = geometry.transform_quadri({xA, xB, xC, xD}, {zA, zB, zC, zD}, xb, zb)
+				end
 
 				local i00 = index(x0,z0)
 				local i01 = index(x1,z0)
@@ -115,7 +181,7 @@ local function generate(minp, maxp, seed)
 				local is_lake = lake_height > terrain_height
 
 				local is_river = false
-				if xf == 0 then
+				if xf < 1/6 then
 					if links[i00] == 1 and rivers[i00] >= min_catchment then
 						is_river = true
 					elseif links[i10] == 3 and rivers[i10] >= min_catchment then
@@ -123,7 +189,7 @@ local function generate(minp, maxp, seed)
 					end
 				end
 
-				if zf == 0 then
+				if zf < 1/6 then
 					if links[i00] == 2 and rivers[i00] >= min_catchment then
 						is_river = true
 					elseif links[i01] == 4 and rivers[i01] >= min_catchment then

@@ -18,7 +18,7 @@ neighbours_dirs = np.array([
 
 neighbours_pattern = neighbours_dirs > 0
 
-def flow_dirs_lakes(dem, random=0.0625):
+def flow_dirs_lakes(dem, random=0):
     (Y, X) = dem.shape
 
     dem_margin = np.zeros((Y+2, X+2))
