@@ -62,7 +62,7 @@ end
 
 local data = {}
 
-local blocksize = 20
+local blocksize = 12
 local sea_level = 1
 local min_catchment = 25
 
@@ -96,72 +96,77 @@ local function generate(minp, maxp, seed)
 
 	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
 	local ystride = a.ystride -- Tip : the ystride of a VoxelArea is the number to add to the array index to get the index of the position above. It's faster because it avoids to completely recalculate the index.
+	local chulens = maxp.z - minp.z + 1
 
-	for x = minp.x, maxp.x do
-		for z = minp.z, maxp.z do
-			local xb = x/blocksize
-			local zb = z/blocksize
-			local xc = math.floor(xb+0.5)
-			local zc = math.floor(zb+0.5)
+	local polygon_number = {}
+	local polygons = {}
+	local xpmin, xpmax = math.max(math.floor(minp.x/blocksize - 0.5), 0), math.min(math.ceil(maxp.x/blocksize), X-2)
+	local zpmin, zpmax = math.max(math.floor(minp.z/blocksize - 0.5), 0), math.min(math.ceil(maxp.z/blocksize), Z-2)
+	local n = 1
+	local n_filled = 0
+	for xp = xpmin, xpmax do
+		for zp=zpmin, zpmax do
+			local iA = index(xp, zp)
+			local iB = index(xp+1, zp)
+			local iC = index(xp+1, zp+1)
+			local iD = index(xp, zp+1)
+			local poly_x = {offset_x[iA]+xp, offset_x[iB]+xp+1, offset_x[iC]+xp+1, offset_x[iD]+xp}
+			local poly_z = {offset_z[iA]+zp, offset_z[iB]+zp, offset_z[iC]+zp+1, offset_z[iD]+zp+1}
 
-			local x0, z0
-			if xc >= 0 and zc >= 0 and xc < X and zc < Z then
-				local xoff, zoff = get_point_location(xc, zc)
-				local north, east, south, west
-				if xc > 0 then
-					local x1off, z1off = get_point_location(xc-1, zc)
-					west = geometry.area({xoff, x1off, xb}, {zoff, z1off, zb}) <= 0
-				else
-					west = zb > zoff
-				end
-				if zc > 0 then
-					local x2off, z2off = get_point_location(xc, zc-1)
-					north = geometry.area({xoff, x2off, xb}, {zoff, z2off, zb}) <= 0
-				else
-					north = xb > xoff
-				end
-				if xc < X-1 then
-					local x3off, z3off = get_point_location(xc+1, zc)
-					east = geometry.area({xoff, x3off, xb}, {zoff, z3off, zb}) <= 0
-				else
-					east = zb < zoff
-				end
-				if zc < Z-1 then
-					local x4off, z4off = get_point_location(xc, zc+1)
-					south = geometry.area({xoff, x4off, xb}, {zoff, z4off, zb}) <= 0
-				else
-					south = xb < xoff
-				end
+			local bounds = {}
+			local xmin = math.max(math.floor(blocksize*math.min(unpack(poly_x)))+1, minp.x)
+			local xmax = math.min(math.floor(blocksize*math.max(unpack(poly_x))), maxp.x)
+			for x=xmin, xmax do
+				bounds[x] = {}
+			end
 
-				if west and not north then
-					x0, z0 = xc-1, zc-1
-				elseif north and not east then
-					x0, z0 = xc, zc-1
-				elseif east and not south then
-					x0, z0 = xc, zc
-				elseif south and not west then
-					x0, z0 = xc-1, zc
-				else
-					x0, z0 = xc, zc
+			local i1 = 4
+			for i2=1, 4 do -- Loop on 4 edges
+				local x1, x2 = poly_x[i1], poly_x[i2]
+				local lxmin = math.floor(blocksize*math.min(x1, x2))+1
+				local lxmax = math.floor(blocksize*math.max(x1, x2))
+				if lxmin <= lxmax then
+					local z1, z2 = poly_z[i1], poly_z[i2]
+					local a = (z1-z2) / (x1-x2)
+					local b = blocksize*(z1 - a*x1)
+					for x=math.max(lxmin, minp.x), math.min(lxmax, maxp.x) do
+						table.insert(bounds[x], a*x+b)
+					end
+				end
+				i1 = i2
+			end
+			for x=xmin, xmax do
+				local xlist = bounds[x]
+				table.sort(xlist)
+				local c = math.floor(#xlist/2)
+				for l=1, c do
+					local zmin = math.max(math.floor(xlist[l*2-1])+1, minp.z)
+					local zmax = math.min(math.floor(xlist[l*2]), maxp.z)
+					local i = (x-minp.x) * chulens + (zmin-minp.z) + 1
+					for z=zmin, zmax do
+						polygon_number[i] = n
+						i = i + 1
+						n_filled = n_filled + 1
+					end
 				end
 			end
 
-			if x0 and z0 and x0 >= 0 and x0 < X-1 and z0 >= 0 and z0 < Z-1 then
-				local x1 = x0+1
-				local z1 = z0+1
-				local xf, zf
-				do
-					local xA, zA = get_point_location(x0, z0)
-					local xB, zB = get_point_location(x0, z1)
-					local xC, zC = get_point_location(x1, z1)
-					local xD, zD = get_point_location(x1, z0)
-					xf, zf = geometry.transform_quadri({xA, xB, xC, xD}, {zA, zB, zC, zD}, xb, zb)
-				end
+			polygons[n] = {x=poly_x, z=poly_z, i={iA, iB, iC, iD}}
+			n = n + 1
+		end
+	end
 
-				local i00 = index(x0,z0)
-				local i01 = index(x1,z0)
-				local i10 = index(x0,z1)
-				local i11 = index(x1,z1)
+	local i = 1
+	for x = minp.x, maxp.x do
+		for z = minp.z, maxp.z do
+			local npoly = polygon_number[i]
+			if npoly then
+				local poly = polygons[npoly]
+				local xf, zf = geometry.transform_quadri(poly.x, poly.z, x/blocksize, z/blocksize)
+				if xf < 0 or xf > 1 or zf < 0 or zf > 1 then
+					print(xf, zf, x, z)
+				end
+				local i00, i01, i11, i10 = unpack(poly.i)
 
 				local terrain_height = math.floor(interp(
 					dem[i00],
@@ -230,6 +235,7 @@ local function generate(minp, maxp, seed)
 					end
 				end
 			end
+			i = i + 1
 		end
 	end
 
