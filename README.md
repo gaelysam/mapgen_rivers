@@ -5,6 +5,8 @@ Procedural map generator for Minetest 5.x. Still experimental and basic.
 
 Contains two distinct programs: Python scripts for pre-processing, and Lua scripts to generate the map on Minetest.
 
+![Screenshot](https://user-images.githubusercontent.com/6905002/79073532-7a567f00-7ce7-11ea-9791-8fb453f5175d.png)
+
 # Installation
 This mod should be placed in the `/mods` directory like any other Minetest mod.
 
