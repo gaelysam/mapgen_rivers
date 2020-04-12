@@ -4,6 +4,7 @@ import numpy as np
 import noise
 from save import save
 from erosion import EvolutionModel
+import bounds
 import os
 import sys
 
@@ -67,10 +68,18 @@ model.calculate_flow()
 
 print('Done')
 
+bx, by = bounds.make_bounds(model.dirs, model.rivers)
+ox, oy = bounds.twist(bx, by, bounds.get_fixed(model.dirs))
+
+offset_x = np.clip(np.floor(ox * 256), -128, 127)
+offset_y = np.clip(np.floor(oy * 256), -128, 127)
+
 save(model.dem, 'dem', dtype='>i2')
 save(model.lakes, 'lakes', dtype='>i2')
 save(model.dirs, 'links', dtype='u1')
 save(model.rivers, 'rivers', dtype='>u4')
+save(offset_x, 'offset_x', dtype='i1')
+save(offset_y, 'offset_y', dtype='i1')
 
 with open('size', 'w') as sfile:
     sfile.write('{:d}\n{:d}'.format(mapsize, mapsize))
