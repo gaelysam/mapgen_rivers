@@ -18,13 +18,13 @@ local function transform_quadri(X, Y, x, y)
 	local x1, x2, x3, x4 = unpack(X)
 	local y1, y2, y3, y4 = unpack(Y)
 
-	local d12 = distance_to_segment(x1,y1,x2,y2,x,y)
-	local d34 = distance_to_segment(x3,y3,x4,y4,x,y)
-	local xc = d12 / (d12+d34)
-
 	local d23 = distance_to_segment(x2,y2,x3,y3,x,y)
 	local d41 = distance_to_segment(x4,y4,x1,y1,x,y)
-	local yc = d41 / (d23+d41)
+	local xc = d41 / (d23+d41)
+
+	local d12 = distance_to_segment(x1,y1,x2,y2,x,y)
+	local d34 = distance_to_segment(x3,y3,x4,y4,x,y)
+	local yc = d12 / (d12+d34)
 	return xc, yc
 end
 
