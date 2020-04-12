@@ -22,7 +22,7 @@ n = np.zeros((mapsize, mapsize))
 #micronoise_depth = 0.05
 
 params = {
-    "octaves" : 8,
+    "octaves" : int(np.log2(mapsize)),
     "persistence" : 0.5,
     "lacunarity" : 2.,
 }
