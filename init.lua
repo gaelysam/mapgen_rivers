@@ -157,9 +157,6 @@ local function generate(minp, maxp, seed)
 			local poly = polygons[i]
 			if poly then
 				local xf, zf = geometry.transform_quadri(poly.x, poly.z, x/blocksize, z/blocksize)
-				if xf < 0 or xf > 1 or zf < 0 or zf > 1 then
-					print(xf, zf, x, z)
-				end
 				local i00, i01, i11, i10 = unpack(poly.i)
 
 				local terrain_height = math.floor(interp(
