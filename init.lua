@@ -98,12 +98,10 @@ local function generate(minp, maxp, seed)
 	local ystride = a.ystride -- Tip : the ystride of a VoxelArea is the number to add to the array index to get the index of the position above. It's faster because it avoids to completely recalculate the index.
 	local chulens = maxp.z - minp.z + 1
 
-	local polygon_number = {}
 	local polygons = {}
 	local xpmin, xpmax = math.max(math.floor(minp.x/blocksize - 0.5), 0), math.min(math.ceil(maxp.x/blocksize), X-2)
 	local zpmin, zpmax = math.max(math.floor(minp.z/blocksize - 0.5), 0), math.min(math.ceil(maxp.z/blocksize), Z-2)
-	local n = 1
-	local n_filled = 0
+
 	for xp = xpmin, xpmax do
 		for zp=zpmin, zpmax do
 			local iA = index(xp, zp)
@@ -112,6 +110,7 @@ local function generate(minp, maxp, seed)
 			local iD = index(xp, zp+1)
 			local poly_x = {offset_x[iA]+xp, offset_x[iB]+xp+1, offset_x[iC]+xp+1, offset_x[iD]+xp}
 			local poly_z = {offset_z[iA]+zp, offset_z[iB]+zp, offset_z[iC]+zp+1, offset_z[iD]+zp+1}
+			local polygon = {x=poly_x, z=poly_z, i={iA, iB, iC, iD}}
 
 			local bounds = {}
 			local xmin = math.max(math.floor(blocksize*math.min(unpack(poly_x)))+1, minp.x)
@@ -144,24 +143,19 @@ local function generate(minp, maxp, seed)
 					local zmax = math.min(math.floor(xlist[l*2]), maxp.z)
 					local i = (x-minp.x) * chulens + (zmin-minp.z) + 1
 					for z=zmin, zmax do
-						polygon_number[i] = n
+						polygons[i] = polygon
 						i = i + 1
-						n_filled = n_filled + 1
 					end
 				end
 			end
-
-			polygons[n] = {x=poly_x, z=poly_z, i={iA, iB, iC, iD}}
-			n = n + 1
 		end
 	end
 
 	local i = 1
 	for x = minp.x, maxp.x do
 		for z = minp.z, maxp.z do
-			local npoly = polygon_number[i]
-			if npoly then
-				local poly = polygons[npoly]
+			local poly = polygons[i]
+			if poly then
 				local xf, zf = geometry.transform_quadri(poly.x, poly.z, x/blocksize, z/blocksize)
 				if xf < 0 or xf > 1 or zf < 0 or zf > 1 then
 					print(xf, zf, x, z)
