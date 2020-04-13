@@ -1,10 +1,11 @@
-local function load_map(filename, bytes, signed)
+local function load_map(filename, bytes, signed, size)
 	local file = io.open(filename, 'r')
 	local data = file:read('*all')
+	if #data < bytes*size then
+		data = minetest.decompress(data)
+	end
 
 	local map = {}
-
-	local size = math.floor(#data/bytes)
 
 	for i=1, size do
 		local i0, i1 = (i-1)*bytes+1, i*bytes

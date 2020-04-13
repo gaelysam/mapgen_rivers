@@ -24,22 +24,22 @@ local X = tonumber(sfile:read('*l'))
 local Z = tonumber(sfile:read('*l'))
 
 copy_if_needed('dem')
-local dem = load_map(worldpath..'dem', 2, true)
+local dem = load_map(worldpath..'dem', 2, true, X*Z)
 copy_if_needed('lakes')
-local lakes = load_map(worldpath..'lakes', 2, true)
+local lakes = load_map(worldpath..'lakes', 2, true, X*Z)
 copy_if_needed('bounds_x')
-local bounds_x = load_map(worldpath..'bounds_x', 4, false)
+local bounds_x = load_map(worldpath..'bounds_x', 4, false, (X-1)*Z)
 copy_if_needed('bounds_y')
-local bounds_z = load_map(worldpath..'bounds_y', 4, false)
+local bounds_z = load_map(worldpath..'bounds_y', 4, false, X*(Z-1))
 
 copy_if_needed('offset_x')
-local offset_x = load_map(worldpath..'offset_x', 1, true)
+local offset_x = load_map(worldpath..'offset_x', 1, true, X*Z)
 for k, v in ipairs(offset_x) do
 	offset_x[k] = (v+0.5)/256
 end
 
 copy_if_needed('offset_y')
-local offset_z = load_map(worldpath..'offset_y', 1, true)
+local offset_z = load_map(worldpath..'offset_y', 1, true, X*Z)
 for k, v in ipairs(offset_z) do
 	offset_z[k] = (v+0.5)/256
 end

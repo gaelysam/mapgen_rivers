@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import zlib
 import matplotlib.pyplot as plt
+
+def load_map(name, dtype, shape):
+    dtype = np.dtype(dtype)
+    with open(name, 'rb') as f:
+        data = f.read()
+    if len(data) < shape[0]*shape[1]*dtype.itemsize:
+        data = zlib.decompress(data)
+    return np.frombuffer(data, dtype=dtype).reshape(shape)
 
 shape = np.loadtxt('size', dtype='u4')
 n = shape[0] * shape[1]
-dem = np.fromfile('dem', dtype='>i2').reshape(shape)
-lakes = np.fromfile('lakes', dtype='>i2').reshape(shape)
-rivers = np.fromfile('rivers', dtype='>u4').reshape(shape)
+dem = load_map('dem', '>i2', shape)
+lakes = load_map('lakes', '>i2', shape)
+rivers = load_map('rivers', '>u4', shape)
 
 plt.subplot(1,3,1)
 plt.pcolormesh(dem, cmap='viridis')
