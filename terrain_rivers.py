@@ -81,6 +81,8 @@ save(np.abs(by), 'bounds_y', dtype='>i4')
 save(offset_x, 'offset_x', dtype='i1')
 save(offset_y, 'offset_y', dtype='i1')
 
+save(model.rivers, 'rivers', dtype='>u4')
+
 with open('size', 'w') as sfile:
     sfile.write('{:d}\n{:d}'.format(mapsize, mapsize))
 
