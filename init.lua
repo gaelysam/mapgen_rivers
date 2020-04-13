@@ -187,6 +187,25 @@ local function generate(minp, maxp, seed)
 				river_south = mean
 			end
 			polygon.rivers = {river_west, river_north, river_east, river_south}
+
+			local around = {0,0,0,0,0,0,0,0}
+			if zp > 0 then
+				around[1] = river_width(bounds_z[iA-X])
+				around[2] = river_width(bounds_z[iB-X])
+			end
+			if xp < X-2 then
+				around[3] = river_width(bounds_x[iB-zp])
+				around[4] = river_width(bounds_x[iC-zp-1])
+			end
+			if zp < Z-2 then
+				around[5] = river_width(bounds_z[iC])
+				around[6] = river_width(bounds_z[iD])
+			end
+			if xp > 0 then
+				around[7] = river_width(bounds_x[iD-zp-2])
+				around[8] = river_width(bounds_x[iA-zp-1])
+			end
+			polygon.river_corners = {math.max(around[8], around[1]), math.max(around[2], around[3]), math.max(around[4], around[5]), math.max(around[6], around[7])}
 		end
 	end
 
@@ -213,6 +232,23 @@ local function generate(minp, maxp, seed)
 				elseif zf <= r_north then
 					is_river = true
 					zf = 0
+				end
+
+				if not is_river then
+					local c_NW, c_NE, c_SE, c_SW = unpack(poly.river_corners)
+					if xf+zf <= c_NW then
+						is_river = true
+						xf, zf = 0, 0
+					elseif 1-xf+zf <= c_NE then
+						is_river = true
+						xf, zf = 1, 0
+					elseif 2-xf-zf <= c_SE then
+						is_river = true
+						xf, zf = 1, 1
+					elseif xf+1-zf <= c_SW then
+						is_river = true
+						xf, zf = 0, 1
+					end
 				end
 
 				if not is_river then
