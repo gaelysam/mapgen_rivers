@@ -221,7 +221,7 @@ local function generate(minp, maxp, seed)
 				end
 
 				local vdem = poly.dem
-				local terrain_height = math.floor(interp(
+				local terrain_height = math.floor(0.5+interp(
 					vdem[1],
 					vdem[2],
 					vdem[3],
