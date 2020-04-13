@@ -54,7 +54,7 @@ local function get_point_location(x, z)
 	return x+offset_x[i], z+offset_z[i]
 end
 
-local function interp(v00, v01, v10, v11, xf, zf)
+local function interp(v00, v01, v11, v10, xf, zf)
 	local v0 = v01*xf + v00*(1-xf)
 	local v1 = v11*xf + v10*(1-xf)
 	return v1*zf + v0*(1-zf)
@@ -148,6 +148,9 @@ local function generate(minp, maxp, seed)
 					end
 				end
 			end
+
+			polygon.dem = {dem[iA], dem[iB], dem[iC], dem[iD]}
+			polygon.lake = math.min(lakes[iA], lakes[iB], lakes[iC], lakes[iD])
 		end
 	end
 
@@ -159,20 +162,16 @@ local function generate(minp, maxp, seed)
 				local xf, zf = geometry.transform_quadri(poly.x, poly.z, x/blocksize, z/blocksize)
 				local i00, i01, i11, i10 = unpack(poly.i)
 
+				local vdem = poly.dem
 				local terrain_height = math.floor(interp(
-					dem[i00],
-					dem[i01],
-					dem[i10],
-					dem[i11],
+					vdem[1],
+					vdem[2],
+					vdem[3],
+					vdem[4],
 					xf, zf
 				))
 
-				local lake_height = math.floor(math.min(
-					lakes[i00],
-					lakes[i01],
-					lakes[i10],
-					lakes[i11]
-				))
+				local lake_height = math.floor(poly.lake)
 
 				local is_lake = lake_height > terrain_height
 
