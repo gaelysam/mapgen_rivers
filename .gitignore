@@ -1,9 +1,9 @@
 __pycache__/
 dem
 lakes
-links
-rivers
 size
 offset_x
 offset_y
+bounds_x
+bounds_y
 unused/

@@ -27,10 +27,10 @@ copy_if_needed('dem')
 local dem = load_map(worldpath..'dem', 2, true)
 copy_if_needed('lakes')
 local lakes = load_map(worldpath..'lakes', 2, true)
-copy_if_needed('links')
-local links = load_map(worldpath..'links', 1, false)
-copy_if_needed('rivers')
-local rivers = load_map(worldpath..'rivers', 4, false)
+copy_if_needed('bounds_x')
+local bounds_x = load_map(worldpath..'bounds_x', 4, false)
+copy_if_needed('bounds_y')
+local bounds_z = load_map(worldpath..'bounds_y', 4, false)
 
 copy_if_needed('offset_x')
 local offset_x = load_map(worldpath..'offset_x', 1, true)
@@ -65,6 +65,7 @@ local data = {}
 local blocksize = 12
 local sea_level = 1
 local min_catchment = 25
+local max_catchment = 40000
 
 local storage = minetest.get_mod_storage()
 if storage:contains("blocksize") then
@@ -81,6 +82,25 @@ if storage:contains("min_catchment") then
 	min_catchment = storage:get_float("min_catchment")
 else
 	storage:set_float("min_catchment", min_catchment)
+end
+if storage:contains("max_catchment") then
+	max_catchment = storage:get_float("max_catchment")
+else
+	storage:set_float("max_catchment", max_catchment)
+end
+
+-- Width coefficients: coefficients solving
+--   wfactor * min_catchment ^ wpower = 1/(2*blocksize)
+--   wfactor * max_catchment ^ wpower = 1
+local wpower = math.log(2*blocksize)/math.log(max_catchment/min_catchment)
+local wfactor = 1 / max_catchment ^ wpower
+local function river_width(flow)
+	flow = math.abs(flow)
+	if flow < min_catchment then
+		return 0
+	end
+
+	return math.min(wfactor * flow ^ wpower, 1)
 end
 
 local function generate(minp, maxp, seed)
@@ -151,6 +171,22 @@ local function generate(minp, maxp, seed)
 
 			polygon.dem = {dem[iA], dem[iB], dem[iC], dem[iD]}
 			polygon.lake = math.min(lakes[iA], lakes[iB], lakes[iC], lakes[iD])
+
+			local river_west = river_width(bounds_z[iA])
+			local river_north = river_width(bounds_x[iA-zp])
+			local river_east = 1-river_width(bounds_z[iB])
+			local river_south = 1-river_width(bounds_x[iD-zp-1])
+			if river_west > river_east then
+				local mean = (river_west + river_east) / 2
+				river_west = mean
+				river_east = mean
+			end
+			if river_north > river_south then
+				local mean = (river_north + river_south) / 2
+				river_north = mean
+				river_south = mean
+			end
+			polygon.rivers = {river_west, river_north, river_east, river_south}
 		end
 	end
 
@@ -161,6 +197,28 @@ local function generate(minp, maxp, seed)
 			if poly then
 				local xf, zf = geometry.transform_quadri(poly.x, poly.z, x/blocksize, z/blocksize)
 				local i00, i01, i11, i10 = unpack(poly.i)
+
+				local is_river = false
+				local r_west, r_north, r_east, r_south = unpack(poly.rivers)
+				if xf >= r_east then
+					is_river = true
+					xf = 1
+				elseif xf <= r_west then
+					is_river = true
+					xf = 0
+				end
+				if zf >= r_south then
+					is_river = true
+					zf = 1
+				elseif zf <= r_north then
+					is_river = true
+					zf = 0
+				end
+
+				if not is_river then
+					xf = (xf-r_west) / (r_east-r_west)
+					zf = (zf-r_north) / (r_south-r_north)
+				end
 
 				local vdem = poly.dem
 				local terrain_height = math.floor(interp(
@@ -174,23 +232,6 @@ local function generate(minp, maxp, seed)
 				local lake_height = math.floor(poly.lake)
 
 				local is_lake = lake_height > terrain_height
-
-				local is_river = false
-				if xf < 1/6 then
-					if links[i00] == 1 and rivers[i00] >= min_catchment then
-						is_river = true
-					elseif links[i10] == 3 and rivers[i10] >= min_catchment then
-						is_river = true
-					end
-				end
-
-				if zf < 1/6 then
-					if links[i00] == 2 and rivers[i00] >= min_catchment then
-						is_river = true
-					elseif links[i01] == 4 and rivers[i01] >= min_catchment then
-						is_river = true
-					end
-				end
 				
 				local ivm = a:index(x, minp.y-1, z)
 

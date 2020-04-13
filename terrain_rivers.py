@@ -76,8 +76,8 @@ offset_y = np.clip(np.floor(oy * 256), -128, 127)
 
 save(model.dem, 'dem', dtype='>i2')
 save(model.lakes, 'lakes', dtype='>i2')
-save(model.dirs, 'links', dtype='u1')
-save(model.rivers, 'rivers', dtype='>u4')
+save(np.abs(bx), 'bounds_x', dtype='>i4')
+save(np.abs(by), 'bounds_y', dtype='>i4')
 save(offset_x, 'offset_x', dtype='i1')
 save(offset_y, 'offset_y', dtype='i1')
 
