@@ -66,28 +66,15 @@ local blocksize = 12
 local sea_level = 1
 local min_catchment = 25
 local max_catchment = 40000
+local riverbed_slope = 0.4
 
-local storage = minetest.get_mod_storage()
-if storage:contains("blocksize") then
-	blocksize = storage:get_int("blocksize")
-else
-	storage:set_int("blocksize", blocksize)
-end
-if storage:contains("sea_level") then
-	sea_level = storage:get_int("sea_level")
-else
-	storage:set_int("sea_level", sea_level)
-end
-if storage:contains("min_catchment") then
-	min_catchment = storage:get_float("min_catchment")
-else
-	storage:set_float("min_catchment", min_catchment)
-end
-if storage:contains("max_catchment") then
-	max_catchment = storage:get_float("max_catchment")
-else
-	storage:set_float("max_catchment", max_catchment)
-end
+local get_settings = dofile(modpath .. 'settings.lua')
+
+blocksize = get_settings('blocksize', 'int', blocksize)
+sea_level = get_settings('sea_level', 'int', sea_level)
+min_catchment = get_settings('min_catchment', 'float', min_catchment)
+max_catchment = get_settings('max_catchment', 'float', max_catchment)
+riverbed_slope = get_settings('riverbed_slope', 'float', riverbed_slope) * blocksize
 
 -- Width coefficients: coefficients solving
 --   wfactor * min_catchment ^ wpower = 1/(2*blocksize)
@@ -218,19 +205,24 @@ local function generate(minp, maxp, seed)
 				local i00, i01, i11, i10 = unpack(poly.i)
 
 				local is_river = false
+				local depth_factor = 0
 				local r_west, r_north, r_east, r_south = unpack(poly.rivers)
 				if xf >= r_east then
 					is_river = true
+					depth_factor = xf-r_east
 					xf = 1
 				elseif xf <= r_west then
 					is_river = true
+					depth_factor = r_west-xf
 					xf = 0
 				end
 				if zf >= r_south then
 					is_river = true
+					depth_factor = zf-r_south
 					zf = 1
 				elseif zf <= r_north then
 					is_river = true
+					depth_factor = r_north-zf
 					zf = 0
 				end
 
@@ -238,15 +230,19 @@ local function generate(minp, maxp, seed)
 					local c_NW, c_NE, c_SE, c_SW = unpack(poly.river_corners)
 					if xf+zf <= c_NW then
 						is_river = true
+						depth_factor = c_NW-xf-zf
 						xf, zf = 0, 0
 					elseif 1-xf+zf <= c_NE then
 						is_river = true
+						depth_factor = c_NE-1+xf-zf
 						xf, zf = 1, 0
 					elseif 2-xf-zf <= c_SE then
 						is_river = true
+						depth_factor = c_SE-2+xf+zf
 						xf, zf = 1, 1
 					elseif xf+1-zf <= c_SW then
 						is_river = true
+						depth_factor = c_SW-xf-1+zf
 						xf, zf = 0, 1
 					end
 				end
@@ -265,19 +261,17 @@ local function generate(minp, maxp, seed)
 					xf, zf
 				))
 
-				local lake_height = math.floor(poly.lake)
-
+				local lake_height = math.max(math.floor(poly.lake), terrain_height)
+				if is_river then
+					terrain_height = math.min(math.max(lake_height, sea_level) - math.floor(1+depth_factor*riverbed_slope), terrain_height)
+				end
 				local is_lake = lake_height > terrain_height
-				
 				local ivm = a:index(x, minp.y-1, z)
-
 				if terrain_height >= minp.y then
 					for y=minp.y, math.min(maxp.y, terrain_height) do
 						if y == terrain_height then
 							if is_lake or y <= sea_level then
 								data[ivm] = c_sand
-							elseif is_river then
-								data[ivm] = c_rwater
 							else
 								data[ivm] = c_lawn
 							end
