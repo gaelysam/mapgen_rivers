@@ -49,11 +49,6 @@ local function index(x, z)
 	return z*X+x+1
 end
 
-local function get_point_location(x, z)
-	local i = index(x, z)
-	return x+offset_x[i], z+offset_z[i]
-end
-
 local function interp(v00, v01, v11, v10, xf, zf)
 	local v0 = v01*xf + v00*(1-xf)
 	local v1 = v11*xf + v10*(1-xf)

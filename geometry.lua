@@ -28,18 +28,7 @@ local function transform_quadri(X, Y, x, y)
 	return xc, yc
 end
 
-local function area(X, Y) -- Signed area of polygon, in function of direction of rotation. Clockwise = positive.
-	local n = #X
-	local sum = X[1]*Y[n] - X[n]*Y[1]
-	for i=2, n do
-		sum = sum + X[i]*Y[i-1] - X[i-1]*Y[i]
-	end
-
-	return sum/2
-end
-
 return {
 	distance_to_segment = distance_to_segment,
 	transform_quadri = transform_quadri,
-	area = area,
 }
