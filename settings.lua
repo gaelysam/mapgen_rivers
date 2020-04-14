@@ -38,4 +38,8 @@ local function get_settings(key, dtype, default)
 	end
 end
 
-return get_settings
+mapgen_rivers.blocksize = get_settings('blocksize', 'int', 12)
+mapgen_rivers.sea_level = get_settings('sea_level', 'int', 1)
+mapgen_rivers.min_catchment = get_settings('min_catchment', 'float', 25)
+mapgen_rivers.max_catchment = get_settings('max_catchment', 'float', 40000)
+mapgen_rivers.riverbed_slope = get_settings('riverbed_slope', 'float', 0.4) * mapgen_rivers.blocksize

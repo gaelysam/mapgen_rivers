@@ -28,7 +28,4 @@ local function transform_quadri(X, Y, x, y)
 	return xc, yc
 end
 
-return {
-	distance_to_segment = distance_to_segment,
-	transform_quadri = transform_quadri,
-}
+return transform_quadri
