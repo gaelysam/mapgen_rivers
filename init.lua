@@ -47,20 +47,20 @@ local function generate(minp, maxp, seed)
 				local is_river = false
 				local depth_factor = 0
 				local r_west, r_north, r_east, r_south = unpack(poly.rivers)
-				if xf >= r_east then
+				if xf > r_east then
 					is_river = true
 					depth_factor = xf-r_east
 					xf = 1
-				elseif xf <= r_west then
+				elseif xf < r_west then
 					is_river = true
 					depth_factor = r_west-xf
 					xf = 0
 				end
-				if zf >= r_south then
+				if zf > r_south then
 					is_river = true
 					depth_factor = zf-r_south
 					zf = 1
-				elseif zf <= r_north then
+				elseif zf < r_north then
 					is_river = true
 					depth_factor = r_north-zf
 					zf = 0
@@ -68,19 +68,19 @@ local function generate(minp, maxp, seed)
 
 				if not is_river then
 					local c_NW, c_NE, c_SE, c_SW = unpack(poly.river_corners)
-					if xf+zf <= c_NW then
+					if xf+zf < c_NW then
 						is_river = true
 						depth_factor = c_NW-xf-zf
 						xf, zf = 0, 0
-					elseif 1-xf+zf <= c_NE then
+					elseif 1-xf+zf < c_NE then
 						is_river = true
 						depth_factor = c_NE-1+xf-zf
 						xf, zf = 1, 0
-					elseif 2-xf-zf <= c_SE then
+					elseif 2-xf-zf < c_SE then
 						is_river = true
 						depth_factor = c_SE-2+xf+zf
 						xf, zf = 1, 1
-					elseif xf+1-zf <= c_SW then
+					elseif xf+1-zf < c_SW then
 						is_river = true
 						depth_factor = c_SW-xf-1+zf
 						xf, zf = 0, 1
