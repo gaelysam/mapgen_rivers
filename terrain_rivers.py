@@ -71,20 +71,19 @@ print('Done')
 
 # Twist the grid
 bx, by = bounds.make_bounds(model.dirs, model.rivers)
-ox, oy = bounds.twist(bx, by, bounds.get_fixed(model.dirs))
+offset_x, offset_y = bounds.twist(bx, by, bounds.get_fixed(model.dirs))
 
 # Convert offset in 8-bits
-offset_x = np.clip(np.floor(ox * 256), -128, 127)
-offset_y = np.clip(np.floor(oy * 256), -128, 127)
+offset_x = np.clip(np.floor(offset_x * 256), -128, 127)
+offset_y = np.clip(np.floor(offset_y * 256), -128, 127)
 
 # Save the files
 save(model.dem, 'dem', dtype='>i2')
 save(model.lakes, 'lakes', dtype='>i2')
-save(np.abs(bx), 'bounds_x', dtype='>i4')
-save(np.abs(by), 'bounds_y', dtype='>i4')
 save(offset_x, 'offset_x', dtype='i1')
 save(offset_y, 'offset_y', dtype='i1')
 
+save(model.dirs, 'dirs', dtype='u1')
 save(model.rivers, 'rivers', dtype='>u4')
 
 with open('size', 'w') as sfile:

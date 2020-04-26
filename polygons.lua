@@ -27,10 +27,10 @@ copy_if_needed('dem')
 local dem = load_map('dem', 2, true, X*Z)
 copy_if_needed('lakes')
 local lakes = load_map('lakes', 2, true, X*Z)
-copy_if_needed('bounds_x')
-local bounds_x = load_map('bounds_x', 4, false, (X-1)*Z)
-copy_if_needed('bounds_y')
-local bounds_z = load_map('bounds_y', 4, false, X*(Z-1))
+copy_if_needed('dirs')
+local dirs = load_map('dirs', 1, false, X*Z)
+copy_if_needed('rivers')
+local rivers = load_map('rivers', 4, false, X*Z)
 
 copy_if_needed('offset_x')
 local offset_x = load_map('offset_x', 1, true, X*Z)
@@ -138,11 +138,21 @@ local function make_polygons(minp, maxp)
 			polygon.lake = math.min(lakes[iA], lakes[iB], lakes[iC], lakes[iD])
 
 			-- Now, rivers.
-			-- Start by finding the river width (if any) for the polygon's 4 edges.
-			local river_west = river_width(bounds_z[iA])
-			local river_north = river_width(bounds_x[iA-zp])
-			local river_east = 1-river_width(bounds_z[iB])
-			local river_south = 1-river_width(bounds_x[iD-zp-1])
+			-- Load river flux values for the 4 corners
+			local riverA = river_width(rivers[iA])
+			local riverB = river_width(rivers[iB])
+			local riverC = river_width(rivers[iC])
+			local riverD = river_width(rivers[iD])
+			polygon.river_corners = {riverA, riverB, riverC, riverD}
+
+			-- Flow directions
+			local dirA, dirB, dirC, dirD = dirs[iA], dirs[iB], dirs[iC], dirs[iD]
+			-- Determine the river flux on the edges, by testing dirs values
+			local river_west = (dirA==1 and riverA or 0) + (dirD==3 and riverD or 0)
+			local river_north = (dirA==2 and riverA or 0) + (dirB==4 and riverB or 0)
+			local river_east = 1 - (dirB==1 and riverB or 0) - (dirC==3 and riverC or 0)
+			local river_south = 1 - (dirD==2 and riverD or 0) - (dirC==4 and riverC or 0)
+
 			-- Only if opposite rivers overlap (should be rare)
 			if river_west > river_east then
 				local mean = (river_west + river_east) / 2
@@ -155,26 +165,6 @@ local function make_polygons(minp, maxp)
 				river_south = mean
 			end
 			polygon.rivers = {river_west, river_north, river_east, river_south}
-
-			-- Look for river corners
-			local around = {0,0,0,0,0,0,0,0}
-			if zp > 0 then
-				around[1] = river_width(bounds_z[iA-X])
-				around[2] = river_width(bounds_z[iB-X])
-			end
-			if xp < X-2 then
-				around[3] = river_width(bounds_x[iB-zp])
-				around[4] = river_width(bounds_x[iC-zp-1])
-			end
-			if zp < Z-2 then
-				around[5] = river_width(bounds_z[iC])
-				around[6] = river_width(bounds_z[iD])
-			end
-			if xp > 0 then
-				around[7] = river_width(bounds_x[iD-zp-2])
-				around[8] = river_width(bounds_x[iA-zp-1])
-			end
-			polygon.river_corners = {math.max(around[8], around[1]), math.max(around[2], around[3]), math.max(around[4], around[5]), math.max(around[6], around[7])}
 		end
 	end
 
