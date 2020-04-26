@@ -153,17 +153,6 @@ local function make_polygons(minp, maxp)
 			local river_east = 1 - (dirB==1 and riverB or 0) - (dirC==3 and riverC or 0)
 			local river_south = 1 - (dirD==2 and riverD or 0) - (dirC==4 and riverC or 0)
 
-			-- Only if opposite rivers overlap (should be rare)
-			if river_west > river_east then
-				local mean = (river_west + river_east) / 2
-				river_west = mean
-				river_east = mean
-			end
-			if river_north > river_south then
-				local mean = (river_north + river_south) / 2
-				river_north = mean
-				river_south = mean
-			end
 			polygon.rivers = {river_west, river_north, river_east, river_south}
 		end
 	end
