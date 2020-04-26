@@ -91,32 +91,7 @@ with open('size', 'w') as sfile:
 
 # Display the map if matplotlib is found
 try:
-    import matplotlib.pyplot as plt
-
-    plt.subplot(2,2,1)
-    plt.pcolormesh(nn, cmap='viridis')
-    plt.gca().set_aspect('equal', 'box')
-    #plt.colorbar(orientation='horizontal')
-    plt.title('Raw elevation')
-
-    plt.subplot(2,2,2)
-    plt.pcolormesh(model.lakes, cmap='viridis')
-    plt.gca().set_aspect('equal', 'box')
-    #plt.colorbar(orientation='horizontal')
-    plt.title('Lake surface elevation')
-
-    plt.subplot(2,2,3)
-    plt.pcolormesh(model.dem, cmap='viridis')
-    plt.gca().set_aspect('equal', 'box')
-    #plt.colorbar(orientation='horizontal')
-    plt.title('Elevation after advection')
-
-    plt.subplot(2,2,4)
-    plt.pcolormesh(model.rivers, vmin=0, vmax=mapsize**2/25, cmap='Blues')
-    plt.gca().set_aspect('equal', 'box')
-    #plt.colorbar(orientation='horizontal')
-    plt.title('Rivers flux')
-
-    plt.show()
+    from view_map import view_map
+    view_map(model.dem, model.lakes, model.rivers)
 except:
     pass

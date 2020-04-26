@@ -2,38 +2,42 @@
 
 import numpy as np
 import zlib
+import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 
-def load_map(name, dtype, shape):
-    dtype = np.dtype(dtype)
-    with open(name, 'rb') as f:
-        data = f.read()
-    if len(data) < shape[0]*shape[1]*dtype.itemsize:
-        data = zlib.decompress(data)
-    return np.frombuffer(data, dtype=dtype).reshape(shape)
+def view_map(dem, lakes, rivers):
+    plt.subplot(1,3,1)
+    plt.pcolormesh(dem, cmap='viridis')
+    plt.gca().set_aspect('equal', 'box')
+    plt.colorbar(orientation='horizontal')
+    plt.title('Raw elevation')
 
-shape = np.loadtxt('size', dtype='u4')
-n = shape[0] * shape[1]
-dem = load_map('dem', '>i2', shape)
-lakes = load_map('lakes', '>i2', shape)
-rivers = load_map('rivers', '>u4', shape)
+    plt.subplot(1,3,2)
+    plt.pcolormesh(lakes, cmap='viridis')
+    plt.gca().set_aspect('equal', 'box')
+    plt.colorbar(orientation='horizontal')
+    plt.title('Lake surface elevation')
 
-plt.subplot(1,3,1)
-plt.pcolormesh(dem, cmap='viridis')
-plt.gca().set_aspect('equal', 'box')
-#plt.colorbar(orientation='horizontal')
-plt.title('Raw elevation')
+    plt.subplot(1,3,3)
+    plt.pcolormesh(rivers, cmap='Blues', norm=mcol.LogNorm())
+    plt.gca().set_aspect('equal', 'box')
+    plt.colorbar(orientation='horizontal')
+    plt.title('Rivers flux')
 
-plt.subplot(1,3,2)
-plt.pcolormesh(lakes, cmap='viridis')
-plt.gca().set_aspect('equal', 'box')
-#plt.colorbar(orientation='horizontal')
-plt.title('Lake surface elevation')
+    plt.show()
 
-plt.subplot(1,3,3)
-plt.pcolormesh(np.log(rivers), vmin=0, vmax=np.log(n/25), cmap='Blues')
-plt.gca().set_aspect('equal', 'box')
-#plt.colorbar(orientation='horizontal')
-plt.title('Rivers flux')
+if __name__ == "__main__":
+    def load_map(name, dtype, shape):
+        dtype = np.dtype(dtype)
+        with open(name, 'rb') as f:
+            data = f.read()
+        if len(data) < shape[0]*shape[1]*dtype.itemsize:
+            data = zlib.decompress(data)
+        return np.frombuffer(data, dtype=dtype).reshape(shape)
 
-plt.show()
+    shape = np.loadtxt('size', dtype='u4')
+    dem = load_map('dem', '>i2', shape)
+    lakes = load_map('lakes', '>i2', shape)
+    rivers = load_map('rivers', '>u4', shape)
+
+    view_map(dem, lakes, rivers)
