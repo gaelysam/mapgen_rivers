@@ -34,6 +34,6 @@ plt.subplot(1,3,3)
 plt.pcolormesh(np.log(rivers), vmin=0, vmax=np.log(n/25), cmap='Blues')
 plt.gca().set_aspect('equal', 'box')
 #plt.colorbar(orientation='horizontal')
-plt.title('Rivers discharge')
+plt.title('Rivers flux')
 
 plt.show()

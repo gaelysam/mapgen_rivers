@@ -1,7 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 def make_bounds(dirs, rivers):
+    """
+    Give an array of all horizontal and vertical bounds
+    """
+
     (Y, X) = dirs.shape
     bounds_h = np.zeros((Y, X-1), dtype='i4')
     bounds_v = np.zeros((Y-1, X), dtype='i4')
@@ -14,6 +17,10 @@ def make_bounds(dirs, rivers):
     return bounds_h, bounds_v
 
 def get_fixed(dirs):
+    """
+    Give the list of points that should not be twisted
+    """
+
     borders = np.zeros(dirs.shape, dtype='?')
     borders[-1,:] |= dirs[-1,:]==1
     borders[:,-1] |= dirs[:,-1]==2
@@ -28,6 +35,11 @@ def get_fixed(dirs):
     return borders | ~donors
 
 def twist(bounds_x, bounds_y, fixed, d=0.1, n=5):
+    """
+    Twist the grid (define an offset for every node). Model river bounds as if they were elastics.
+    Smoothes preferentially big rivers.
+    """
+
     moveable = ~fixed
 
     (Y, X) = fixed.shape
@@ -55,7 +67,7 @@ def twist(bounds_x, bounds_y, fixed, d=0.1, n=5):
 
         length = np.hypot(force_x, force_y)
         length[length==0] = 1
-        coeff = d / length * moveable
+        coeff = d / length * moveable # Normalize, take into account the direction only
         offset_x += force_x * coeff
         offset_y += force_y * coeff
 

@@ -12,6 +12,7 @@ local make_polygons = dofile(modpath .. 'polygons.lua')
 
 local transform_quadri = dofile(modpath .. 'geometry.lua')
 
+-- Linear interpolation
 local function interp(v00, v01, v11, v10, xf, zf)
 	local v0 = v01*xf + v00*(1-xf)
 	local v1 = v11*xf + v10*(1-xf)
@@ -44,6 +45,7 @@ local function generate(minp, maxp, seed)
 				local xf, zf = transform_quadri(poly.x, poly.z, x/blocksize, z/blocksize)
 				local i00, i01, i11, i10 = unpack(poly.i)
 
+				-- Test the 4 edges to see whether we are in a river or not
 				local is_river = false
 				local depth_factor = 0
 				local r_west, r_north, r_east, r_south = unpack(poly.rivers)
@@ -66,7 +68,7 @@ local function generate(minp, maxp, seed)
 					zf = 0
 				end
 
-				if not is_river then
+				if not is_river then -- Test corners also
 					local c_NW, c_NE, c_SE, c_SW = unpack(poly.river_corners)
 					if xf+zf < c_NW then
 						is_river = true
@@ -87,7 +89,7 @@ local function generate(minp, maxp, seed)
 					end
 				end
 
-				if not is_river then
+				if not is_river then -- Redefine indicesto have 0/1 on the riverbanks (avoids ugly edge cuts, at least for small rivers)
 					xf = (xf-r_west) / (r_east-r_west)
 					zf = (zf-r_north) / (r_south-r_north)
 				end
