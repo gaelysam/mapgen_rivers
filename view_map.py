@@ -27,6 +27,11 @@ def view_map(dem, lakes, rivers):
     plt.show()
 
 if __name__ == "__main__":
+    import sys
+    import os
+    if len(sys.argv) > 1:
+        os.chdir(sys.argv[1])
+
     def load_map(name, dtype, shape):
         dtype = np.dtype(dtype)
         with open(name, 'rb') as f:

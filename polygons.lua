@@ -1,15 +1,22 @@
 local modpath = minetest.get_modpath(minetest.get_current_modname()) .. '/'
-local worldpath = minetest.get_worldpath() .. '/'
+local mod_data_path = modpath .. 'data/'
+if not io.open(mod_data_path .. 'size', 'r') then
+	mod_data_path = modpath .. 'demo_data/'
+end
+
+local world_data_path = minetest.get_worldpath() .. '/river_data/'
+minetest.mkdir(world_data_path)
+
 local load_map = dofile(modpath .. 'load.lua')
 
 local function copy_if_needed(filename)
-	local wfilename = worldpath..filename
+	local wfilename = world_data_path..filename
 	local wfile = io.open(wfilename, 'r')
 	if wfile then
 		wfile:close()
 		return
 	end
-	local mfilename = modpath..filename
+	local mfilename = mod_data_path..filename
 	local mfile = io.open(mfilename, 'r')
 	local wfile = io.open(wfilename, 'w')
 	wfile:write(mfile:read("*all"))
@@ -18,7 +25,7 @@ local function copy_if_needed(filename)
 end
 
 copy_if_needed('size')
-local sfile = io.open(worldpath..'size')
+local sfile = io.open(world_data_path..'size')
 local X = tonumber(sfile:read('*l'))
 local Z = tonumber(sfile:read('*l'))
 sfile:close()

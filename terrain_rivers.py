@@ -77,6 +77,9 @@ offset_x, offset_y = bounds.twist(bx, by, bounds.get_fixed(model.dirs))
 offset_x = np.clip(np.floor(offset_x * 256), -128, 127)
 offset_y = np.clip(np.floor(offset_y * 256), -128, 127)
 
+if not os.path.isdir('data'):
+    os.mkdir('data')
+os.chdir('data')
 # Save the files
 save(model.dem, 'dem', dtype='>i2')
 save(model.lakes, 'lakes', dtype='>i2')

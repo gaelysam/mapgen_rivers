@@ -1,4 +1,4 @@
-local worldpath = minetest.get_worldpath() .. "/"
+local worldpath = minetest.get_worldpath() .. "/river_data/"
 
 local function load_map(filename, bytes, signed, size)
 	local file = io.open(worldpath .. filename, 'r')
