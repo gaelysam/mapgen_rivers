@@ -15,15 +15,15 @@ argc = len(sys.argv)
 if argc > 1:
 	mapsize = int(sys.argv[1])
 else:
-	mapsize = 400
+	mapsize = 401
 
-scale = mapsize / 2
+scale = (mapsize-1) / 2
 n = np.zeros((mapsize, mapsize))
 
 #micronoise_depth = 0.05
 
 params = {
-    "octaves" : int(np.log2(mapsize)),
+    "octaves" : int(np.ceil(np.log2(mapsize-1)))+1,
     "persistence" : 0.5,
     "lacunarity" : 2.,
 }
