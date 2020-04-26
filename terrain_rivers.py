@@ -15,14 +15,14 @@ argc = len(sys.argv)
 if argc > 1:
 	mapsize = int(sys.argv[1])
 else:
-	mapsize = 401
+	mapsize = 400
 
-scale = (mapsize-1) / 2
-n = np.zeros((mapsize, mapsize))
+scale = mapsize / 2
+n = np.zeros((mapsize+1, mapsize+1))
 
 # Set noise parameters
 params = {
-    "octaves" : int(np.ceil(np.log2(mapsize-1)))+1,
+    "octaves" : int(np.ceil(np.log2(mapsize)))+1,
     "persistence" : 0.5,
     "lacunarity" : 2.,
 }
@@ -32,8 +32,8 @@ xbase = np.random.randint(65536)
 ybase = np.random.randint(65536)
 
 # Generate the noise
-for x in range(mapsize):
-    for y in range(mapsize):
+for x in range(mapsize+1):
+    for y in range(mapsize+1):
         n[x,y] = noise.snoise2(x/scale + xbase, y/scale + ybase, **params)
 
 nn = n*mapsize/5 + mapsize/20
@@ -87,7 +87,7 @@ save(model.dirs, 'dirs', dtype='u1')
 save(model.rivers, 'rivers', dtype='>u4')
 
 with open('size', 'w') as sfile:
-    sfile.write('{:d}\n{:d}'.format(mapsize, mapsize))
+    sfile.write('{:d}\n{:d}'.format(mapsize+1, mapsize+1))
 
 # Display the map if matplotlib is found
 try:

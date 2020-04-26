@@ -23,7 +23,7 @@ Run the script `terrain_rivers.py` via command line. You can optionally append t
 ```
 ./terrain_rivers.py 1000
 ```
-For a default 401x401 map, it should take between 1 and 2 minutes. It will generate 5 files directly in the mod folder, containing the map data.
+For a default 400x400 map, it should take between 1 and 2 minutes. It will generate 5 files directly in the mod folder, containing the map data.
 
 ## Map generation
 Just create a Minetest world with `singlenode` mapgen, enable this mod and start the world. The data files are immediately copied in the world folder so you can re-generate them afterwards, it won't affect the old worlds.
