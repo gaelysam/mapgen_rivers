@@ -150,7 +150,7 @@ local function make_polygons(minp, maxp)
 			local riverB = river_width(rivers[iB])
 			local riverC = river_width(rivers[iC])
 			local riverD = river_width(rivers[iD])
-			polygon.river_corners = {riverA, riverB, riverC, riverD}
+			polygon.river_corners = {riverA, 1-riverB, 2-riverC, 1-riverD}
 
 			-- Flow directions
 			local dirA, dirB, dirC, dirD = dirs[iA], dirs[iB], dirs[iC], dirs[iD]

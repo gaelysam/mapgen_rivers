@@ -60,9 +60,9 @@ local function generate(minp, maxp, seed)
 					xf - r_east,
 					zf - r_south,
 					c_NW-xf-zf,
-					c_NE+xf-zf-1,
-					c_SE+xf+zf-2,
-					c_SW-xf+zf-1,
+					xf-zf-c_NE,
+					xf+zf-c_SE,
+					zf-xf-c_SW,
 				}
 
 				-- Find the maximal depth factor and determine to which river it belongs
@@ -77,10 +77,10 @@ local function generate(minp, maxp, seed)
 
 				-- Transform the coordinates to have xf and zf = 0 or 1 in rivers (to avoid rivers having lateral slope and to accomodate the surrounding smoothly)
 				if imax == 0 then
-					local x0 = math.max(r_west, c_NW-zf, c_SW+zf-1)
-					local x1 = math.min(r_east, 1-c_NE+zf, 2-c_SE-zf)
-					local z0 = math.max(r_north, c_NW-xf, c_NE+xf-1)
-					local z1 = math.min(r_south, 1-c_SW+xf, 2-c_SE-xf)
+					local x0 = math.max(r_west, c_NW-zf, zf-c_SW)
+					local x1 = math.min(r_east, c_NE+zf, c_SE-zf)
+					local z0 = math.max(r_north, c_NW-xf, xf-c_NE)
+					local z1 = math.min(r_south, c_SW+xf, c_SE-xf)
 					xf = (xf-x0) / (x1-x0)
 					zf = (zf-z0) / (z1-z0)
 				elseif imax == 1 then
