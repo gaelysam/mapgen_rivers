@@ -133,7 +133,7 @@ local function generate(minp, maxp, seed)
 				end
 
 				if lake_height > sea_level then
-					if is_lake and lake_height > minp.y then
+					if is_lake and lake_height >= minp.y then
 						for y=math.max(minp.y, terrain_height+1), math.min(maxp.y, lake_height) do
 							data[ivm] = c_rwater
 							ivm = ivm + ystride
