@@ -12,6 +12,8 @@ local make_polygons = dofile(modpath .. 'polygons.lua')
 
 local transform_quadri = dofile(modpath .. 'geometry.lua')
 
+local heightmaps = dofile(modpath .. 'heightmap.lua')
+
 -- Linear interpolation
 local function interp(v00, v01, v11, v10, xf, zf)
 	local v0 = v01*xf + v00*(1-xf)
@@ -21,7 +23,95 @@ end
 
 local data = {}
 
+local noise_x_params = {
+	offset = 0,
+	scale = 1,
+	seed = -4574,
+	spread = {x=64, y=32, z=64},
+	octaves = 3,
+	persistence = 0.75,
+	lacunarity = 2,
+}
+
+local noise_z_params = {
+	offset = 0,
+	scale = 1,
+	seed = -7940,
+	spread = {x=64, y=32, z=64},
+	octaves = 3,
+	persistence = 0.75,
+	lacunarity = 2,
+}
+
+local noise_distort_params = {
+	offset = 0,
+	scale = 10,
+	seed = 676,
+	spread = {x=1024, y=1024, z=1024},
+	octaves = 5,
+	persistence = 0.5,
+	lacunarity = 2,
+	flags = "absvalue",
+}
+
+local noise_x_obj, noise_z_obj, noise_distort_obj
+local noise_x_map = {}
+local noise_z_map = {}
+local noise_distort_map = {}
+local mapsize
+local init = false
+
 local function generate(minp, maxp, seed)
+	local chulens = {
+		x = maxp.x-minp.x+1,
+		y = maxp.y-minp.y+1,
+		z = maxp.z-minp.z+1,
+	}
+
+	if not init then
+		mapsize = {
+			x = chulens.x,
+			y = chulens.y+1,
+			z = chulens.z,
+		}
+		noise_x_obj = minetest.get_perlin_map(noise_x_params, mapsize)
+		noise_z_obj = minetest.get_perlin_map(noise_z_params, mapsize)
+		noise_distort_obj = minetest.get_perlin_map(noise_distort_params, chulens)
+		init = true
+	end
+
+	noise_x_obj:get_3d_map_flat(minp, noise_x_map)
+	noise_z_obj:get_3d_map_flat(minp, noise_z_map)
+	noise_distort_obj:get_2d_map_flat(minp, noise_distort_map)
+
+	local xmin, xmax, zmin, zmax = minp.x, maxp.x, minp.z, maxp.z
+	local i = 0
+	local i2d = 0
+	for z=minp.z, maxp.z do
+		for y=minp.y, maxp.y+1 do
+			for x=minp.x, maxp.x do
+				i = i+1
+				i2d = i2d+1
+				local distort = noise_distort_map[i2d]
+				local xv = noise_x_map[i]*distort + x
+				if xv < xmin then xmin = xv end
+				if xv > xmax then xmax = xv end
+				noise_x_map[i] = xv
+				local zv = noise_z_map[i]*distort + z
+				if zv < zmin then zmin = zv end
+				if zv > zmax then zmax = zv end
+				noise_z_map[i] = zv
+			end
+			i2d = i2d-chulens.x
+		end
+	end
+
+	local pminp = {x=math.floor(xmin), z=math.floor(zmin)}
+	local pmaxp = {x=math.floor(xmax)+1, z=math.floor(zmax)+1}
+	local incr = pmaxp.z-pminp.z+1
+	local i_origin = 1 - pminp.x*incr - pminp.z
+	local terrain_map, lake_map = heightmaps(pminp, pmaxp)
+
 	local c_stone = minetest.get_content_id("default:stone")
 	local c_dirt = minetest.get_content_id("default:dirt")
 	local c_lawn = minetest.get_content_id("default:dirt_with_grass")
@@ -35,119 +125,55 @@ local function generate(minp, maxp, seed)
 	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
 	local ystride = a.ystride -- Tip : the ystride of a VoxelArea is the number to add to the array index to get the index of the position above. It's faster because it avoids to completely recalculate the index.
 
-	local polygons = make_polygons(minp, maxp)
+	local nid = mapsize.x*(mapsize.y-1) + 1
+	local incrY = -mapsize.x
+	local incrX = 1 - mapsize.y*incrY
+	local incrZ = mapsize.x*mapsize.y - mapsize.x*incrX - mapsize.x*mapsize.y*incrY
+	
+	for z = minp.z, maxp.z do
+		for x = minp.x, maxp.x do
+			local ivm = a:index(x, minp.y, z)
+			local ground_above = false
+			for y = maxp.y+1, minp.y, -1 do
+				local xn = noise_x_map[nid]
+				local zn = noise_z_map[nid]
+				local x0 = math.floor(xn)
+				local z0 = math.floor(zn)
 
-	local i = 1
-	for x = minp.x, maxp.x do
-		for z = minp.z, maxp.z do
-			local poly = polygons[i]
-			if poly then
-				local xf, zf = transform_quadri(poly.x, poly.z, x/blocksize, z/blocksize)
-				local i00, i01, i11, i10 = unpack(poly.i)
+				local i0 = i_origin + x0*incr + z0
+				local i1 = i0+incr
+				local i2 = i1+1
+				local i3 = i0+1
 
-				-- Load river width on 4 edges and corners
-				local r_west, r_north, r_east, r_south = unpack(poly.rivers)
-				local c_NW, c_NE, c_SE, c_SW = unpack(poly.river_corners)
+				local terrain = interp(terrain_map[i0], terrain_map[i1], terrain_map[i2], terrain_map[i3], xn-x0, zn-z0)
+				if y <= maxp.y then
+					local lake = math.min(lake_map[i0], lake_map[i1], lake_map[i2], lake_map[i3])
 
-				-- Calculate the depth factor for each edge and corner.
-				-- Depth factor:
-				-- < 0: outside river
-				-- = 0: on riverbank
-				-- > 0: inside river
-				local depth_factors = {
-					r_west - xf,
-					r_north - zf,
-					xf - r_east,
-					zf - r_south,
-					c_NW-xf-zf,
-					xf-zf-c_NE,
-					xf+zf-c_SE,
-					zf-xf-c_SW,
-				}
-
-				-- Find the maximal depth factor and determine to which river it belongs
-				local depth_factor_max = 0
-				local imax = 0
-				for i=1, 8 do
-					if depth_factors[i] >= depth_factor_max then
-						depth_factor_max = depth_factors[i]
-						imax = i
-					end
-				end
-
-				-- Transform the coordinates to have xf and zf = 0 or 1 in rivers (to avoid rivers having lateral slope and to accomodate the surrounding smoothly)
-				if imax == 0 then
-					local x0 = math.max(r_west, c_NW-zf, zf-c_SW)
-					local x1 = math.min(r_east, c_NE+zf, c_SE-zf)
-					local z0 = math.max(r_north, c_NW-xf, xf-c_NE)
-					local z1 = math.min(r_south, c_SW+xf, c_SE-xf)
-					xf = (xf-x0) / (x1-x0)
-					zf = (zf-z0) / (z1-z0)
-				elseif imax == 1 then
-					xf = 0
-				elseif imax == 2 then
-					zf = 0
-				elseif imax == 3 then
-					xf = 1
-				elseif imax == 4 then
-					zf = 1
-				elseif imax == 5 then
-					xf, zf = 0, 0
-				elseif imax == 6 then
-					xf, zf = 1, 0
-				elseif imax == 7 then
-					xf, zf = 1, 1
-				elseif imax == 8 then
-					xf, zf = 0, 1
-				end
-
-				-- Determine elevation by interpolation
-				local vdem = poly.dem
-				local terrain_height = math.floor(0.5+interp(
-					vdem[1],
-					vdem[2],
-					vdem[3],
-					vdem[4],
-					xf, zf
-				))
-
-				local lake_height = math.max(math.floor(poly.lake), terrain_height)
-				if imax > 0 and depth_factor_max > 0 then
-					terrain_height = math.min(math.max(lake_height, sea_level) - math.floor(1+depth_factor_max*riverbed_slope), terrain_height)
-				end
-				local is_lake = lake_height > terrain_height
-				local ivm = a:index(x, minp.y-1, z)
-				if terrain_height >= minp.y then
-					for y=minp.y, math.min(maxp.y, terrain_height) do
-						if y == terrain_height then
-							if is_lake or y <= sea_level then
-								data[ivm] = c_sand
-							else
-								data[ivm] = c_lawn
-							end
-						else
+					local is_lake = lake > terrain
+					local ivm = a:index(x, y, z)
+					if y <= terrain then
+						if y <= terrain-1 or ground_above then
 							data[ivm] = c_stone
+						elseif is_lake then
+							data[ivm] = c_sand
+						else
+							data[ivm] = c_lawn
 						end
-						ivm = ivm + ystride
+					elseif y <= lake and lake > sea_level then
+						data[ivm] = c_rwater
+					elseif y <= sea_level then
+						data[ivm] = c_water
 					end
 				end
 
-				if lake_height > sea_level then
-					if is_lake and lake_height >= minp.y then
-						for y=math.max(minp.y, terrain_height+1), math.min(maxp.y, lake_height) do
-							data[ivm] = c_rwater
-							ivm = ivm + ystride
-						end
-					end
-				else
-					for y=math.max(minp.y, terrain_height+1), math.min(maxp.y, sea_level) do
-						data[ivm] = c_water
-						ivm = ivm + ystride
-					end
-				end
+				ground_above = y <= terrain
+
+				ivm = ivm + ystride
+				nid = nid + incrY
 			end
-			i = i + 1
+			nid = nid + incrX
 		end
+		nid = nid + incrZ
 	end
 
 	vm:set_data(data)
