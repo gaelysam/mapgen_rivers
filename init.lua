@@ -54,10 +54,18 @@ local noise_distort_params = {
 	flags = "absvalue",
 }
 
-local noise_x_obj, noise_z_obj, noise_distort_obj
+local noise_heat_params = minetest.get_mapgen_setting_noiseparams('mg_biome_np_heat')
+local noise_heat_blend_params = minetest.get_mapgen_setting_noiseparams('mg_biome_np_heat_blend')
+
+local elevation_chill = 0.25
+noise_heat_params.offset = noise_heat_params.offset + sea_level*elevation_chill
+
+local noise_x_obj, noise_z_obj, noise_distort_obj, noise_heat_obj, noise_heat_blend_obj
 local noise_x_map = {}
 local noise_z_map = {}
 local noise_distort_map = {}
+local noise_heat_map = {}
+local noise_heat_blend_map = {}
 local mapsize
 local init = false
 
@@ -76,13 +84,18 @@ local function generate(minp, maxp, seed)
 		}
 		noise_x_obj = minetest.get_perlin_map(noise_x_params, mapsize)
 		noise_z_obj = minetest.get_perlin_map(noise_z_params, mapsize)
+		noise_heat_obj = minetest.get_perlin_map(noise_heat_params, chulens)
+		noise_heat_blend_obj = minetest.get_perlin_map(noise_heat_blend_params, chulens)
 		noise_distort_obj = minetest.get_perlin_map(noise_distort_params, chulens)
 		init = true
 	end
 
+	local minp2d = {x=minp.x, y=minp.z}
 	noise_x_obj:get_3d_map_flat(minp, noise_x_map)
 	noise_z_obj:get_3d_map_flat(minp, noise_z_map)
-	noise_distort_obj:get_2d_map_flat(minp, noise_distort_map)
+	noise_distort_obj:get_2d_map_flat(minp2d, noise_distort_map)
+	noise_heat_obj:get_2d_map_flat(minp2d, noise_heat_map)
+	noise_heat_blend_obj:get_2d_map_flat(minp2d, noise_heat_blend_map)
 
 	local xmin, xmax, zmin, zmax = minp.x, maxp.x, minp.z, maxp.z
 	local i = 0
@@ -115,9 +128,12 @@ local function generate(minp, maxp, seed)
 	local c_stone = minetest.get_content_id("default:stone")
 	local c_dirt = minetest.get_content_id("default:dirt")
 	local c_lawn = minetest.get_content_id("default:dirt_with_grass")
+	local c_dirtsnow = minetest.get_content_id("default:dirt_with_snow")
+	local c_snow = minetest.get_content_id("default:snowblock")
 	local c_sand = minetest.get_content_id("default:sand")
 	local c_water = minetest.get_content_id("default:water_source")
 	local c_rwater = minetest.get_content_id("default:river_water_source")
+	local c_ice = minetest.get_content_id("default:ice")
 
 	local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
 	vm:get_data(data)
@@ -129,11 +145,14 @@ local function generate(minp, maxp, seed)
 	local incrY = -mapsize.x
 	local incrX = 1 - mapsize.y*incrY
 	local incrZ = mapsize.x*mapsize.y - mapsize.x*incrX - mapsize.x*mapsize.y*incrY
+
+	local i2d = 1
 	
 	for z = minp.z, maxp.z do
 		for x = minp.x, maxp.x do
 			local ivm = a:index(x, minp.y, z)
 			local ground_above = false
+			local temperature = noise_heat_map[i2d]+noise_heat_blend_map[i2d]
 			for y = maxp.y+1, minp.y, -1 do
 				local xn = noise_x_map[nid]
 				local zn = noise_z_map[nid]
@@ -154,13 +173,25 @@ local function generate(minp, maxp, seed)
 					if y <= terrain then
 						if y <= terrain-1 or ground_above then
 							data[ivm] = c_stone
-						elseif is_lake then
+						elseif is_lake or y < sea_level then
 							data[ivm] = c_sand
 						else
-							data[ivm] = c_lawn
+							local temperature_y = temperature - y*elevation_chill
+							if temperature_y >= 15 then
+								data[ivm] = c_lawn
+							elseif temperature_y >= 0 then
+								data[ivm] = c_dirtsnow
+							else
+								data[ivm] = c_snow
+							end
 						end
 					elseif y <= lake and lake > sea_level then
-						data[ivm] = c_rwater
+						local temperature_y = temperature - y*elevation_chill
+						if temperature_y >= 0 then
+							data[ivm] = c_rwater
+						else
+							data[ivm] = c_ice
+						end
 					elseif y <= sea_level then
 						data[ivm] = c_water
 					end
@@ -172,6 +203,7 @@ local function generate(minp, maxp, seed)
 				nid = nid + incrY
 			end
 			nid = nid + incrX
+			i2d = i2d + 1
 		end
 		nid = nid + incrZ
 	end
