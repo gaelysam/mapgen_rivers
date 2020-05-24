@@ -9,6 +9,8 @@ local function get_settings(key, dtype, default)
 			return storage:get_int(key)
 		elseif dtype == "float" then
 			return storage:get_float(key)
+		elseif dtype == "bool" then
+			return storage:get_string(key) == 'true'
 		end
 	end
 
@@ -20,7 +22,7 @@ local function get_settings(key, dtype, default)
 		elseif dtype == "float" then
 			conf_val = tonumber(conf_val)
 			storage:set_float(key, conf_val)
-		elseif dtype == "string" then
+		elseif dtype == "string" or dtype == "bool" then
 			storage:set_string(key, conf_val)
 		end
 
@@ -32,6 +34,8 @@ local function get_settings(key, dtype, default)
 			storage:set_float(key, default)
 		elseif dtype == "string" then
 			storage:set_string(key, default)
+		elseif dtype == "bool" then
+			storage:set_string(key, tostring(default))
 		end
 
 		return default
@@ -43,3 +47,7 @@ mapgen_rivers.sea_level = get_settings('sea_level', 'int', 1)
 mapgen_rivers.min_catchment = get_settings('min_catchment', 'float', 25)
 mapgen_rivers.max_catchment = get_settings('max_catchment', 'float', 40000)
 mapgen_rivers.riverbed_slope = get_settings('riverbed_slope', 'float', 0.4) * mapgen_rivers.blocksize
+--mapgen_rivers.distort = get_settings('distort', 'bool', true) To be implemented: should be possible to disable distorsion
+mapgen_rivers.glaciers = get_settings('glaciers', 'bool', true)
+mapgen_rivers.glacier_factor = get_settings('glacier_factor', 'float', 8)
+mapgen_rivers.elevation_chill = get_settings('elevation_chill', 'float', 0.25)

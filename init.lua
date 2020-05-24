@@ -7,6 +7,9 @@ dofile(modpath .. 'settings.lua')
 local blocksize = mapgen_rivers.blocksize
 local sea_level = mapgen_rivers.sea_level
 local riverbed_slope = mapgen_rivers.riverbed_slope
+local elevation_chill = mapgen_rivers.elevation_chill
+
+dofile(modpath .. 'noises.lua')
 
 local make_polygons = dofile(modpath .. 'polygons.lua')
 
@@ -22,43 +25,6 @@ local function interp(v00, v01, v11, v10, xf, zf)
 end
 
 local data = {}
-
-local noise_x_params = {
-	offset = 0,
-	scale = 1,
-	seed = -4574,
-	spread = {x=64, y=32, z=64},
-	octaves = 3,
-	persistence = 0.75,
-	lacunarity = 2,
-}
-
-local noise_z_params = {
-	offset = 0,
-	scale = 1,
-	seed = -7940,
-	spread = {x=64, y=32, z=64},
-	octaves = 3,
-	persistence = 0.75,
-	lacunarity = 2,
-}
-
-local noise_distort_params = {
-	offset = 0,
-	scale = 10,
-	seed = 676,
-	spread = {x=1024, y=1024, z=1024},
-	octaves = 5,
-	persistence = 0.5,
-	lacunarity = 2,
-	flags = "absvalue",
-}
-
-local noise_heat_params = minetest.get_mapgen_setting_noiseparams('mg_biome_np_heat')
-local noise_heat_blend_params = minetest.get_mapgen_setting_noiseparams('mg_biome_np_heat_blend')
-
-local elevation_chill = 0.25
-noise_heat_params.offset = noise_heat_params.offset + sea_level*elevation_chill
 
 local noise_x_obj, noise_z_obj, noise_distort_obj, noise_heat_obj, noise_heat_blend_obj
 local noise_x_map = {}
@@ -82,11 +48,11 @@ local function generate(minp, maxp, seed)
 			y = chulens.y+1,
 			z = chulens.z,
 		}
-		noise_x_obj = minetest.get_perlin_map(noise_x_params, mapsize)
-		noise_z_obj = minetest.get_perlin_map(noise_z_params, mapsize)
-		noise_heat_obj = minetest.get_perlin_map(noise_heat_params, chulens)
-		noise_heat_blend_obj = minetest.get_perlin_map(noise_heat_blend_params, chulens)
-		noise_distort_obj = minetest.get_perlin_map(noise_distort_params, chulens)
+		noise_x_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_x, mapsize)
+		noise_z_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_z, mapsize)
+		noise_heat_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.heat, chulens)
+		noise_heat_blend_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.heat_blend, chulens)
+		noise_distort_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_amplitude, chulens)
 		init = true
 	end
 

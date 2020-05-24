@@ -74,9 +74,28 @@ local function river_width(flow)
 	return math.min(wfactor * flow ^ wpower, 1)
 end
 
+local noise_heat -- Need a large-scale noise here so no heat blend
+local elevation_chill = mapgen_rivers.elevation_chill
+local function get_temperature(x, y, z)
+	local pos = {x=x, y=z}
+	return noise_heat:get2d(pos) - y*elevation_chill
+end
+
+local glaciers = mapgen_rivers.glaciers
+local glacier_factor = mapgen_rivers.glacier_factor
+
+local init = false
+
 -- On map generation, determine into which polygon every point (in 2D) will fall.
 -- Also store polygon-specific data
 local function make_polygons(minp, maxp)
+	if not init then
+		if glaciers then
+			noise_heat = minetest.get_perlin(mapgen_rivers.noise_params.heat)
+		end
+		init = true
+	end
+
 	local chulens = maxp.z - minp.z + 1
 
 	local polygons = {}
@@ -141,7 +160,8 @@ local function make_polygons(minp, maxp)
 				end
 			end
 
-			polygon.dem = {dem[iA], dem[iB], dem[iC], dem[iD]}
+			local poly_dem = {dem[iA], dem[iB], dem[iC], dem[iD]}
+			polygon.dem = poly_dem
 			polygon.lake = math.min(lakes[iA], lakes[iB], lakes[iC], lakes[iD])
 
 			-- Now, rivers.
@@ -150,6 +170,21 @@ local function make_polygons(minp, maxp)
 			local riverB = river_width(rivers[iB])
 			local riverC = river_width(rivers[iC])
 			local riverD = river_width(rivers[iD])
+			if glaciers then -- Widen the river
+				if get_temperature(poly_x[1]*blocksize, poly_dem[1], poly_z[1]*blocksize) < 0 then
+					riverA = math.min(riverA*glacier_factor, 1)
+				end
+				if get_temperature(poly_x[2]*blocksize, poly_dem[2], poly_z[2]*blocksize) < 0 then
+					riverB = math.min(riverB*glacier_factor, 1)
+				end
+				if get_temperature(poly_x[3]*blocksize, poly_dem[3], poly_z[3]*blocksize) < 0 then
+					riverC = math.min(riverC*glacier_factor, 1)
+				end
+				if get_temperature(poly_x[4]*blocksize, poly_dem[4], poly_z[4]*blocksize) < 0 then
+					riverD = math.min(riverD*glacier_factor, 1)
+				end
+			end
+
 			polygon.river_corners = {riverA, 1-riverB, 2-riverC, 1-riverD}
 
 			-- Flow directions
