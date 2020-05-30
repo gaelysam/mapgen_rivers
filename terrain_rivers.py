@@ -7,24 +7,48 @@ from erosion import EvolutionModel
 import bounds
 import os
 import sys
+import settings
 
 # Always place in this script's parent directory
 os.chdir(os.path.dirname(sys.argv[0]))
 argc = len(sys.argv)
 
-if argc > 1:
-	mapsize = int(sys.argv[1])
-else:
-	mapsize = 400
+params = {}
 
-scale = mapsize / 2
+if argc > 1:
+	if os.path.isfile(sys.argv[1]):
+		params = settings.read_config_file(sys.argv[1])
+	else:
+		mapsize = int(sys.argv[1])
+
+def get_setting(name, default):
+	if name in params:
+		return params[name]
+	return default
+
+mapsize = int(get_setting('mapsize', 400))
+scale = float(get_setting('scale', 200.0))
+vscale = float(get_setting('vscale', 200.0))
+offset = float(get_setting('offset', 0.0))
+persistence = float(get_setting('persistence', 0.5))
+lacunarity = float(get_setting('lacunarity', 2.0))
+
+K = float(get_setting('K', 1.0))
+m = float(get_setting('m', 0.35))
+d = float(get_setting('d', 1.0))
+sea_level = float(get_setting('sea_level', 0.0))
+flex_radius = float(get_setting('flex_radius', 20.0))
+
+time = float(get_setting('time', 10.0))
+niter = int(get_setting('niter', 10))
+
 n = np.zeros((mapsize+1, mapsize+1))
 
 # Set noise parameters
 params = {
     "octaves" : int(np.ceil(np.log2(mapsize)))+1,
-    "persistence" : 0.5,
-    "lacunarity" : 2.,
+    "persistence" : persistence,
+    "lacunarity" : lacunarity,
 }
 
 # Determine noise offset randomly
@@ -36,36 +60,28 @@ for x in range(mapsize+1):
     for y in range(mapsize+1):
         n[x,y] = noise.snoise2(x/scale + xbase, y/scale + ybase, **params)
 
-nn = n*mapsize/5 + mapsize/20
+nn = n*vscale + offset
 
 # Initialize landscape evolution model
 print('Initializing model')
-model = EvolutionModel(nn, K=1, m=0.35, d=1, sea_level=0)
+model = EvolutionModel(nn, K=1, m=0.35, d=1, sea_level=0, flex_radius=flex_radius)
+
+dt = time/niter
 
 # Run the model's processes: the order in which the processes are run is arbitrary and could be changed.
-print('Flow calculation 1')
+print('Initial flow calculation')
 model.calculate_flow()
 
-print('Advection 1')
-model.advection(2)
-
-print('Isostatic equilibration 1')
-model.adjust_isostasy()
-
-print('Flow calculation 2')
-model.calculate_flow()
-
-print('Diffusion')
-model.diffusion(4)
-
-print('Advection 2')
-model.advection(2)
-
-print('Isostatic equilibration 2')
-model.adjust_isostasy()
-
-print('Flow calculation 3')
-model.calculate_flow()
+for i in range(niter):
+    print('Iteration {:d} of {:d}'.format(i+1, niter))
+    print('Diffusion')
+    model.diffusion(dt)
+    print('Advection')
+    model.advection(dt)
+    print('Isostatic equilibration')
+    model.adjust_isostasy()
+    print('Flow calculation')
+    model.calculate_flow()
 
 print('Done')
 
