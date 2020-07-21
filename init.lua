@@ -8,6 +8,7 @@ local blocksize = mapgen_rivers.blocksize
 local sea_level = mapgen_rivers.sea_level
 local riverbed_slope = mapgen_rivers.riverbed_slope
 local elevation_chill = mapgen_rivers.elevation_chill
+local use_distort = mapgen_rivers.distort
 
 dofile(modpath .. 'noises.lua')
 
@@ -48,48 +49,58 @@ local function generate(minp, maxp, seed)
 			y = chulens.y+1,
 			z = chulens.z,
 		}
-		noise_x_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_x, mapsize)
-		noise_z_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_z, mapsize)
+		if use_distort then
+			noise_x_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_x, mapsize)
+			noise_z_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_z, mapsize)
+			noise_distort_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_amplitude, chulens)
+		end
 		noise_heat_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.heat, chulens)
 		noise_heat_blend_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.heat_blend, chulens)
-		noise_distort_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_amplitude, chulens)
 		init = true
 	end
 
 	local minp2d = {x=minp.x, y=minp.z}
-	noise_x_obj:get_3d_map_flat(minp, noise_x_map)
-	noise_z_obj:get_3d_map_flat(minp, noise_z_map)
-	noise_distort_obj:get_2d_map_flat(minp2d, noise_distort_map)
+	if use_distort then
+		noise_x_obj:get_3d_map_flat(minp, noise_x_map)
+		noise_z_obj:get_3d_map_flat(minp, noise_z_map)
+		noise_distort_obj:get_2d_map_flat(minp2d, noise_distort_map)
+	end
 	noise_heat_obj:get_2d_map_flat(minp2d, noise_heat_map)
 	noise_heat_blend_obj:get_2d_map_flat(minp2d, noise_heat_blend_map)
 
-	local xmin, xmax, zmin, zmax = minp.x, maxp.x, minp.z, maxp.z
-	local i = 0
-	local i2d = 0
-	for z=minp.z, maxp.z do
-		for y=minp.y, maxp.y+1 do
-			for x=minp.x, maxp.x do
-				i = i+1
-				i2d = i2d+1
-				local distort = noise_distort_map[i2d]
-				local xv = noise_x_map[i]*distort + x
-				if xv < xmin then xmin = xv end
-				if xv > xmax then xmax = xv end
-				noise_x_map[i] = xv
-				local zv = noise_z_map[i]*distort + z
-				if zv < zmin then zmin = zv end
-				if zv > zmax then zmax = zv end
-				noise_z_map[i] = zv
-			end
-			i2d = i2d-chulens.x
-		end
-	end
+	local terrain_map, lake_map, incr, i_origin
 
-	local pminp = {x=math.floor(xmin), z=math.floor(zmin)}
-	local pmaxp = {x=math.floor(xmax)+1, z=math.floor(zmax)+1}
-	local incr = pmaxp.x-pminp.x+1
-	local i_origin = 1 - pminp.z*incr - pminp.x
-	local terrain_map, lake_map = heightmaps(pminp, pmaxp)
+	if use_distort then
+		local xmin, xmax, zmin, zmax = minp.x, maxp.x, minp.z, maxp.z
+		local i = 0
+		local i2d = 0
+		for z=minp.z, maxp.z do
+			for y=minp.y, maxp.y+1 do
+				for x=minp.x, maxp.x do
+					i = i+1
+					i2d = i2d+1
+					local distort = noise_distort_map[i2d]
+					local xv = noise_x_map[i]*distort + x
+					if xv < xmin then xmin = xv end
+					if xv > xmax then xmax = xv end
+					noise_x_map[i] = xv
+					local zv = noise_z_map[i]*distort + z
+					if zv < zmin then zmin = zv end
+					if zv > zmax then zmax = zv end
+					noise_z_map[i] = zv
+				end
+				i2d = i2d-chulens.x
+			end
+		end
+
+		local pminp = {x=math.floor(xmin), z=math.floor(zmin)}
+		local pmaxp = {x=math.floor(xmax)+1, z=math.floor(zmax)+1}
+		incr = pmaxp.x-pminp.x+1
+		i_origin = 1 - pminp.z*incr - pminp.x
+		terrain_map, lake_map = heightmaps(pminp, pmaxp)
+	else
+		terrain_map, lake_map = heightmaps(minp, maxp)
+	end
 
 	local c_stone = minetest.get_content_id("default:stone")
 	local c_dirt = minetest.get_content_id("default:dirt")
@@ -119,20 +130,29 @@ local function generate(minp, maxp, seed)
 			local ivm = a:index(x, minp.y, z)
 			local ground_above = false
 			local temperature = noise_heat_map[i2d]+noise_heat_blend_map[i2d]
+			local terrain, lake
+			if not use_distort then
+				terrain = terrain_map[i2d]
+				lake = lake_map[i2d]
+			end
+
 			for y = maxp.y+1, minp.y, -1 do
-				local xn = noise_x_map[nid]
-				local zn = noise_z_map[nid]
-				local x0 = math.floor(xn)
-				local z0 = math.floor(zn)
+				if use_distort then
+					local xn = noise_x_map[nid]
+					local zn = noise_z_map[nid]
+					local x0 = math.floor(xn)
+					local z0 = math.floor(zn)
 
-				local i0 = i_origin + z0*incr + x0
-				local i1 = i0+1
-				local i2 = i1+incr
-				local i3 = i2-1
+					local i0 = i_origin + z0*incr + x0
+					local i1 = i0+1
+					local i2 = i1+incr
+					local i3 = i2-1
 
-				local terrain = interp(terrain_map[i0], terrain_map[i1], terrain_map[i2], terrain_map[i3], xn-x0, zn-z0)
+					terrain = interp(terrain_map[i0], terrain_map[i1], terrain_map[i2], terrain_map[i3], xn-x0, zn-z0)
+					lake = math.min(lake_map[i0], lake_map[i1], lake_map[i2], lake_map[i3])
+				end
+
 				if y <= maxp.y then
-					local lake = math.min(lake_map[i0], lake_map[i1], lake_map[i2], lake_map[i3])
 
 					local is_lake = lake > terrain
 					local ivm = a:index(x, y, z)
@@ -166,12 +186,20 @@ local function generate(minp, maxp, seed)
 				ground_above = y <= terrain
 
 				ivm = ivm + ystride
-				nid = nid + incrY
+				if use_distort then
+					nid = nid + incrY
+				end
 			end
-			nid = nid + incrX
+
+			if use_distort then
+				nid = nid + incrX
+			end
 			i2d = i2d + 1
 		end
-		nid = nid + incrZ
+
+		if use_distort then
+			nid = nid + incrZ
+		end
 	end
 
 	vm:set_data(data)
