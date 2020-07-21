@@ -7,6 +7,8 @@ local blocksize = mapgen_rivers.blocksize
 local sea_level = mapgen_rivers.sea_level
 local riverbed_slope = mapgen_rivers.riverbed_slope
 
+local MAP_BOTTOM = -31000
+
 -- Linear interpolation
 local function interp(v00, v01, v11, v10, xf, zf)
 	local v0 = v01*xf + v00*(1-xf)
@@ -17,15 +19,14 @@ end
 local function heightmaps(minp, maxp)
 
 	local polygons = make_polygons(minp, maxp)
-	local incr = maxp.x-minp.x+1
-	local i0 = (minp.z-minp.z) * incr + (minp.x-minp.x) + 1
+	local incr = maxp.z-minp.z+1
 
 	local terrain_height_map = {}
 	local lake_height_map = {}
 
 	local i = 1
-	for x=minp.x, maxp.x do
-		for z=minp.z, maxp.z do
+	for z=minp.z, maxp.z do
+		for x=minp.x, maxp.x do
 			local poly = polygons[i]
 
 			if poly then
@@ -106,8 +107,8 @@ local function heightmaps(minp, maxp)
 				terrain_height_map[i] = terrain_height
 				lake_height_map[i] = lake_height
 			else
-				terrain_height_map[i] = -31000
-				lake_height_map[i] = -31000
+				terrain_height_map[i] = MAP_BOTTOM
+				lake_height_map[i] = MAP_BOTTOM
 			end
 			i = i + 1
 		end

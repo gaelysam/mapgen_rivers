@@ -87,8 +87,8 @@ local function generate(minp, maxp, seed)
 
 	local pminp = {x=math.floor(xmin), z=math.floor(zmin)}
 	local pmaxp = {x=math.floor(xmax)+1, z=math.floor(zmax)+1}
-	local incr = pmaxp.z-pminp.z+1
-	local i_origin = 1 - pminp.x*incr - pminp.z
+	local incr = pmaxp.x-pminp.x+1
+	local i_origin = 1 - pminp.z*incr - pminp.x
 	local terrain_map, lake_map = heightmaps(pminp, pmaxp)
 
 	local c_stone = minetest.get_content_id("default:stone")
@@ -125,10 +125,10 @@ local function generate(minp, maxp, seed)
 				local x0 = math.floor(xn)
 				local z0 = math.floor(zn)
 
-				local i0 = i_origin + x0*incr + z0
-				local i1 = i0+incr
-				local i2 = i1+1
-				local i3 = i0+1
+				local i0 = i_origin + z0*incr + x0
+				local i1 = i0+1
+				local i2 = i1+incr
+				local i3 = i2-1
 
 				local terrain = interp(terrain_map[i0], terrain_map[i1], terrain_map[i2], terrain_map[i3], xn-x0, zn-z0)
 				if y <= maxp.y then

@@ -96,7 +96,7 @@ local function make_polygons(minp, maxp)
 		init = true
 	end
 
-	local chulens = maxp.z - minp.z + 1
+	local chulens = maxp.x - minp.x + 1
 
 	local polygons = {}
 	-- Determine the minimum and maximum coordinates of the polygons that could be on the chunk, knowing that they have an average size of 'blocksize' and a maximal offset of 0.5 blocksize.
@@ -115,44 +115,44 @@ local function make_polygons(minp, maxp)
 			local poly_z = {offset_z[iA]+zp, offset_z[iB]+zp, offset_z[iC]+zp+1, offset_z[iD]+zp+1}
 			local polygon = {x=poly_x, z=poly_z, i={iA, iB, iC, iD}}
 
-			local bounds = {} -- Will be a list of the intercepts of polygon edges for every X position (scanline algorithm)
-			-- Calculate the min and max X positions 
-			local xmin = math.max(math.floor(blocksize*math.min(unpack(poly_x)))+1, minp.x)
-			local xmax = math.min(math.floor(blocksize*math.max(unpack(poly_x))), maxp.x)
+			local bounds = {} -- Will be a list of the intercepts of polygon edges for every Z position (scanline algorithm)
+			-- Calculate the min and max Z positions 
+			local zmin = math.max(math.floor(blocksize*math.min(unpack(poly_z)))+1, minp.z)
+			local zmax = math.min(math.floor(blocksize*math.max(unpack(poly_z))), maxp.z)
 			-- And initialize the arrays
-			for x=xmin, xmax do
-				bounds[x] = {}
+			for z=zmin, zmax do
+				bounds[z] = {}
 			end
 
 			local i1 = 4
 			for i2=1, 4 do -- Loop on 4 edges
-				local x1, x2 = poly_x[i1], poly_x[i2]
-				-- Calculate the integer X positions over which this edge spans
-				local lxmin = math.floor(blocksize*math.min(x1, x2))+1
-				local lxmax = math.floor(blocksize*math.max(x1, x2))
-				if lxmin <= lxmax then -- If there is at least one position in it
-					local z1, z2 = poly_z[i1], poly_z[i2]
-					-- Calculate coefficient of the equation defining the edge: Z=aX+b
-					local a = (z1-z2) / (x1-x2)
-					local b = blocksize*(z1 - a*x1)
-					for x=math.max(lxmin, minp.x), math.min(lxmax, maxp.x) do
-						-- For every X position involved, add the intercepted Z position in the table
-						table.insert(bounds[x], a*x+b)
+				local z1, z2 = poly_z[i1], poly_z[i2]
+				-- Calculate the integer Z positions over which this edge spans
+				local lzmin = math.floor(blocksize*math.min(z1, z2))+1
+				local lzmax = math.floor(blocksize*math.max(z1, z2))
+				if lzmin <= lzmax then -- If there is at least one position in it
+					local x1, x2 = poly_x[i1], poly_x[i2]
+					-- Calculate coefficient of the equation defining the edge: X=aZ+b
+					local a = (x1-x2) / (z1-z2)
+					local b = blocksize*(x1 - a*z1)
+					for z=math.max(lzmin, minp.z), math.min(lzmax, maxp.z) do
+						-- For every Z position involved, add the intercepted X position in the table
+						table.insert(bounds[z], a*z+b)
 					end
 				end
 				i1 = i2
 			end
-			for x=xmin, xmax do
+			for z=zmin, zmax do
 				-- Now sort the bounds list
-				local xlist = bounds[x]
-				table.sort(xlist)
-				local c = math.floor(#xlist/2)
+				local zlist = bounds[z]
+				table.sort(zlist)
+				local c = math.floor(#zlist/2)
 				for l=1, c do
-					-- Take pairs of Z coordinates: all positions between them belong to the polygon.
-					local zmin = math.max(math.floor(xlist[l*2-1])+1, minp.z)
-					local zmax = math.min(math.floor(xlist[l*2]), maxp.z)
-					local i = (x-minp.x) * chulens + (zmin-minp.z) + 1
-					for z=zmin, zmax do
+					-- Take pairs of X coordinates: all positions between them belong to the polygon.
+					local xmin = math.max(math.floor(zlist[l*2-1])+1, minp.x)
+					local xmax = math.min(math.floor(zlist[l*2]), maxp.x)
+					local i = (z-minp.z) * chulens + (xmin-minp.x) + 1
+					for x=xmin, xmax do
 						-- Fill the map at these places
 						polygons[i] = polygon
 						i = i + 1
