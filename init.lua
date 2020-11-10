@@ -12,10 +12,6 @@ local use_distort = mapgen_rivers.distort
 
 dofile(modpath .. 'noises.lua')
 
-local make_polygons = dofile(modpath .. 'polygons.lua')
-
-local transform_quadri = dofile(modpath .. 'geometry.lua')
-
 local heightmaps = dofile(modpath .. 'heightmap.lua')
 
 -- Linear interpolation
