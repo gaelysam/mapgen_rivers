@@ -9,7 +9,13 @@ local sea_level = mapgen_rivers.sea_level
 local riverbed_slope = mapgen_rivers.riverbed_slope
 local elevation_chill = mapgen_rivers.elevation_chill
 local use_distort = mapgen_rivers.distort
+local use_biomes = mapgen_rivers.biomes
+local use_biomegen_mod = use_biomes and minetest.global_exists('biomegen')
+use_biomes = use_biomes and not use_biomegen_mod
 
+if use_biomegen_mod then
+	biomegen.set_elevation_chill(elevation_chill)
+end
 dofile(modpath .. 'noises.lua')
 
 local heightmaps = dofile(modpath .. 'heightmap.lua')
@@ -50,8 +56,10 @@ local function generate(minp, maxp, seed)
 			noise_z_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_z, mapsize)
 			noise_distort_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.distort_amplitude, chulens)
 		end
-		noise_heat_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.heat, chulens)
-		noise_heat_blend_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.heat_blend, chulens)
+		if use_biomes then
+			noise_heat_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.heat, chulens)
+			noise_heat_blend_obj = minetest.get_perlin_map(mapgen_rivers.noise_params.heat_blend, chulens)
+		end
 		init = true
 	end
 
@@ -61,8 +69,10 @@ local function generate(minp, maxp, seed)
 		noise_z_obj:get_3d_map_flat(minp, noise_z_map)
 		noise_distort_obj:get_2d_map_flat(minp2d, noise_distort_map)
 	end
-	noise_heat_obj:get_2d_map_flat(minp2d, noise_heat_map)
-	noise_heat_blend_obj:get_2d_map_flat(minp2d, noise_heat_blend_map)
+	if use_biomes then
+		noise_heat_obj:get_2d_map_flat(minp2d, noise_heat_map)
+		noise_heat_blend_obj:get_2d_map_flat(minp2d, noise_heat_blend_map)
+	end
 
 	local terrain_map, lake_map, incr, i_origin
 
@@ -125,7 +135,10 @@ local function generate(minp, maxp, seed)
 		for x = minp.x, maxp.x do
 			local ivm = a:index(x, minp.y, z)
 			local ground_above = false
-			local temperature = noise_heat_map[i2d]+noise_heat_blend_map[i2d]
+			local temperature
+			if use_biomes then
+				temperature = noise_heat_map[i2d]+noise_heat_blend_map[i2d]
+			end
 			local terrain, lake
 			if not use_distort then
 				terrain = terrain_map[i2d]
@@ -153,7 +166,7 @@ local function generate(minp, maxp, seed)
 					local is_lake = lake > terrain
 					local ivm = a:index(x, y, z)
 					if y <= terrain then
-						if y <= terrain-1 or ground_above then
+						if not use_biomes or y <= terrain-1 or ground_above then
 							data[ivm] = c_stone
 						elseif is_lake or y < sea_level then
 							data[ivm] = c_sand
@@ -168,8 +181,7 @@ local function generate(minp, maxp, seed)
 							end
 						end
 					elseif y <= lake and lake > sea_level then
-						local temperature_y = temperature - y*elevation_chill
-						if temperature_y >= 0 then
+						if not use_biomes or temperature - y*elevation_chill >= 0 then
 							data[ivm] = c_rwater
 						else
 							data[ivm] = c_ice
@@ -198,8 +210,19 @@ local function generate(minp, maxp, seed)
 		end
 	end
 
+	if use_biomegen_mod then
+		biomegen.generate_biomes(data, a, minp, maxp)
+	end
 	vm:set_data(data)
-	minetest.generate_ores(vm, minp, maxp)
+	if use_biomegen_mod then
+		biomegen.place_all_decos(data, a, vm, minp, maxp, seed)
+		minetest.generate_ores(vm, minp, maxp)
+		vm:get_data(data)
+		biomegen.dust_top_nodes(vm, data, a, minp, maxp)
+	else
+		minetest.generate_ores(vm, minp, maxp)
+	end
+
 	vm:set_lighting({day = 0, night = 0})
 	vm:calc_lighting()
 	vm:update_liquids()
