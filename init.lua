@@ -211,16 +211,10 @@ local function generate(minp, maxp, seed)
 	end
 
 	if use_biomegen_mod then
-		biomegen.generate_biomes(data, a, minp, maxp)
-	end
-	vm:set_data(data)
-	if use_biomegen_mod then
-		biomegen.place_all_decos(data, a, vm, minp, maxp, seed)
-		minetest.generate_ores(vm, minp, maxp)
-		vm:get_data(data)
-		biomegen.dust_top_nodes(vm, data, a, minp, maxp)
+		biomegen.generate_all(data, a, vm, minp, maxp, seed)
 	else
-		minetest.generate_ores(vm, minp, maxp)
+		vm:set_data(data)
+		mietest.generate_ores(vm, minp, maxp)
 	end
 
 	vm:set_lighting({day = 0, night = 0})
