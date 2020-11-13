@@ -2,29 +2,75 @@
 
 import numpy as np
 import zlib
-import matplotlib.colors as mcol
+import matplotlib.colors as mcl
 import matplotlib.pyplot as plt
 
-def view_map(dem, lakes, rivers, scale):
-    plt.subplot(1,3,1)
-    plt.pcolormesh(np.arange(dem.shape[0]+1)*scale, np.arange(dem.shape[1]+1)*scale, dem, cmap='viridis')
-    plt.gca().set_aspect('equal', 'box')
-    plt.colorbar(orientation='horizontal')
-    plt.title('Raw elevation')
+has_matplotlib = True
+try:
+    import matplotlib.colors as mcl
+    import matplotlib.pyplot as plt
+    try:
+        import colorcet as cc
+        cmap1 = cc.cm.CET_L11
+        cmap2 = cc.cm.CET_L12
+    except ImportError: # No module colorcet
+        import matplotlib.cm as cm
+        cmap1 = cm.summer
+        cmap2 = cm.Blues
+except ImportError: # No module matplotlib
+    has_matplotlib = False
 
-    plt.subplot(1,3,2)
-    plt.pcolormesh(np.arange(lakes.shape[0]+1)*scale, np.arange(lakes.shape[1]+1)*scale, lakes, cmap='viridis')
-    plt.gca().set_aspect('equal', 'box')
-    plt.colorbar(orientation='horizontal')
-    plt.title('Lake surface elevation')
 
-    plt.subplot(1,3,3)
-    plt.pcolormesh(np.arange(rivers.shape[0]+1)*scale, np.arange(rivers.shape[1]+1)*scale, rivers, cmap='Blues', norm=mcol.LogNorm())
-    plt.gca().set_aspect('equal', 'box')
-    plt.colorbar(orientation='horizontal')
-    plt.title('Rivers flux')
+def view_map(dem, lakes, scale):
+    if not has_matplotlib:
+        return
+    lakes_sea = np.maximum(lakes, 0)
+    water = np.maximum(lakes_sea - dem, 0)
+    max_elev = lakes_sea.max()
+    max_depth = water.max()
+
+    ls = mcl.LightSource(azdeg=315, altdeg=45)
+    rgb = ls.shade(lakes_sea, cmap=cmap1, vert_exag=1/scale, blend_mode='soft', vmin=0, vmax=max_elev)
+
+    (X, Y) = dem.shape
+    extent = (0, Y*scale, 0, X*scale)
+    plt.imshow(np.flipud(rgb), extent=extent, interpolation='antialiased')
+    alpha = (water > 0).astype('u1')
+    plt.imshow(np.flipud(water), alpha=np.flipud(alpha), cmap=cmap2, extent=extent, vmin=0, vmax=max_depth, interpolation='antialiased')
+
+    sm1 = plt.cm.ScalarMappable(cmap=cmap1, norm=plt.Normalize(vmin=0, vmax=max_elev))
+    plt.colorbar(sm1).set_label('Altitude')
+
+    sm2 = plt.cm.ScalarMappable(cmap=cmap2, norm=plt.Normalize(vmin=0, vmax=max_depth))
+    plt.colorbar(sm2).set_label('Profondeur d\'eau')
 
     plt.show()
+
+def map_stats(dem, lake_dem, scale):
+    surface = dem.size
+
+    continent = lake_dem >= 0
+    continent_surface = continent.sum()
+
+    lake = continent & (lake_dem>dem)
+    lake_surface = lake.sum()
+
+    print('---   General    ---')
+    print('Grid size:    {:5d}x{:5d}'.format(dem.shape[0], dem.shape[1]))
+    print('Map size:     {:5d}x{:5d}'.format(int(dem.shape[0]*scale), int(dem.shape[1]*scale)))
+    print()
+    print('---   Surfaces   ---')
+    print('Continents:        {:6.2%}'.format(continent_surface/surface))
+    print('-> Ground:         {:6.2%}'.format((continent_surface-lake_surface)/surface))
+    print('-> Lakes:          {:6.2%}'.format(lake_surface/surface))
+    print('Oceans:            {:6.2%}'.format(1-continent_surface/surface))
+    print()
+    print('---  Elevations  ---')
+    print('Mean elevation:      {:4.0f}'.format(dem.mean()))
+    print('Mean ocean depth:    {:4.0f}'.format((dem*~continent).sum()/(surface-continent_surface)))
+    print('Mean continent elev: {:4.0f}'.format((dem*continent).sum()/continent_surface))
+    print('Lowest elevation:    {:4.0f}'.format(dem.min()))
+    print('Highest elevation:   {:4.0f}'.format(dem.max()))
 
 if __name__ == "__main__":
     import sys
@@ -47,6 +93,6 @@ if __name__ == "__main__":
     shape = np.loadtxt('size', dtype='u4')
     dem = load_map('dem', '>i2', shape)
     lakes = load_map('lakes', '>i2', shape)
-    rivers = load_map('rivers', '>u4', shape)
 
-    view_map(dem, lakes, rivers, scale)
+    map_stats(dem, lakes, scale)
+    view_map(dem, lakes, scale)
