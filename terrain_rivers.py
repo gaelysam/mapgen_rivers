@@ -11,16 +11,30 @@ import settings
 
 import view_map
 
-# Always place in this script's parent directory
-os.chdir(os.path.dirname(sys.argv[0]))
+### READ SETTINGS
 argc = len(sys.argv)
 
 config_file = 'terrain.conf'
-
-if argc > 1:
-    config_file = sys.argv[1]
+params_from_args = {}
+i = 1
+while i < argc:
+    arg = sys.argv[i]
+    if arg[:2] == '--':
+        pname = arg[2:]
+        if i+1 < argc:
+            if pname == 'config':
+                config_file = sys.argv[i+1]
+            else:
+                params_from_args[pname] = sys.argv[i+1]
+        i += 2
+    else:
+        config_file = arg
+        i += 1
 
 params = settings.read_config_file(config_file)
+params.update(params_from_args) # Params given from args prevail against conf file
+
+print(params)
 
 def get_setting(name, default):
 	if name in params:
@@ -43,6 +57,10 @@ flex_radius = float(get_setting('flex_radius', 20.0))
 time = float(get_setting('time', 10.0))
 niter = int(get_setting('niter', 10))
 
+# Always place in this script's parent directory
+os.chdir(os.path.dirname(sys.argv[0]))
+
+### MAKE INITIAL TOPOGRAPHY
 n = np.zeros((mapsize+1, mapsize+1))
 
 # Set noise parameters
@@ -63,6 +81,7 @@ for x in range(mapsize+1):
 
 nn = n*vscale + offset
 
+### COMPUTE LANDSCAPE EVOLUTION
 # Initialize landscape evolution model
 print('Initializing model')
 model = EvolutionModel(nn, K=1, m=0.35, d=1, sea_level=0, flex_radius=flex_radius)
@@ -97,6 +116,7 @@ offset_x, offset_y = bounds.twist(bx, by, bounds.get_fixed(model.dirs))
 offset_x = np.clip(np.floor(offset_x * 256), -128, 127)
 offset_y = np.clip(np.floor(offset_y * 256), -128, 127)
 
+### SAVE OUTPUT
 if not os.path.isdir('data'):
     os.mkdir('data')
 os.chdir('data')
