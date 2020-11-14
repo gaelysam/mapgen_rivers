@@ -1,5 +1,5 @@
 local modpath = minetest.get_modpath(minetest.get_current_modname()) .. '/'
-local mod_data_path = modpath .. 'data/'
+local mod_data_path = modpath .. 'river_data/'
 if not io.open(mod_data_path .. 'size', 'r') then
 	mod_data_path = modpath .. 'demo_data/'
 end

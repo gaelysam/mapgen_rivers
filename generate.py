@@ -11,7 +11,7 @@ import terrainlib
 argc = len(sys.argv)
 
 config_file = 'terrain.conf'
-output_dir = 'data'
+output_dir = 'river_data'
 params_from_args = {}
 i = 1 # Index of arguments
 j = 1 # Number of 'orphan' arguments (the ones that are not preceded by '--something')
