@@ -1,7 +1,7 @@
 local worldpath = minetest.get_worldpath() .. "/river_data/"
 
 local function load_map(filename, bytes, signed, size)
-	local file = io.open(worldpath .. filename, 'r')
+	local file = io.open(worldpath .. filename, 'rb')
 	local data = file:read('*all')
 	if #data < bytes*size then
 		data = minetest.decompress(data)

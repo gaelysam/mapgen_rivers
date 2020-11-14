@@ -11,21 +11,21 @@ local load_map = dofile(modpath .. 'load.lua')
 
 local function copy_if_needed(filename)
 	local wfilename = world_data_path..filename
-	local wfile = io.open(wfilename, 'r')
+	local wfile = io.open(wfilename, 'rb')
 	if wfile then
 		wfile:close()
 		return
 	end
 	local mfilename = mod_data_path..filename
-	local mfile = io.open(mfilename, 'r')
-	local wfile = io.open(wfilename, 'w')
+	local mfile = io.open(mfilename, 'rb')
+	local wfile = io.open(wfilename, 'wb')
 	wfile:write(mfile:read("*all"))
 	mfile:close()
 	wfile:close()
 end
 
 copy_if_needed('size')
-local sfile = io.open(world_data_path..'size')
+local sfile = io.open(world_data_path..'size', 'r')
 local X = tonumber(sfile:read('*l'))
 local Z = tonumber(sfile:read('*l'))
 sfile:close()
