@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.ndimage as im
-import rivermapper as rm
+from .rivermapper import flow
 
 def advection(dem, dirs, rivers, time, K=1, m=0.5, sea_level=0):
     """
@@ -76,7 +76,7 @@ class EvolutionModel:
             self.flow_uptodate = False
 
     def calculate_flow(self):
-        self.dirs, self.lakes, self.rivers = rm.flow(self.dem)
+        self.dirs, self.lakes, self.rivers = flow(self.dem)
         self.flow_uptodate = True
 
     def advection(self, time):

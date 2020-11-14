@@ -2,14 +2,10 @@
 
 import numpy as np
 import noise
-from save import save
-from erosion import EvolutionModel
-import bounds
 import os
 import sys
-import settings
 
-import view_map
+import terrainlib
 
 ### READ SETTINGS
 argc = len(sys.argv)
@@ -31,7 +27,7 @@ while i < argc:
         config_file = arg
         i += 1
 
-params = settings.read_config_file(config_file)
+params = terrainlib.read_config_file(config_file)
 params.update(params_from_args) # Params given from args prevail against conf file
 
 print(params)
@@ -84,8 +80,8 @@ nn = n*vscale + offset
 ### COMPUTE LANDSCAPE EVOLUTION
 # Initialize landscape evolution model
 print('Initializing model')
-model = EvolutionModel(nn, K=1, m=0.35, d=1, sea_level=0, flex_radius=flex_radius)
-view_map.update(model.dem, model.lakes, t=5, title='Initializing...')
+model = terrainlib.EvolutionModel(nn, K=1, m=0.35, d=1, sea_level=0, flex_radius=flex_radius)
+terrainlib.update(model.dem, model.lakes, t=5, title='Initializing...')
 
 dt = time/niter
 
@@ -95,7 +91,7 @@ model.calculate_flow()
 
 for i in range(niter):
     disp_niter = 'Iteration {:d} of {:d}...'.format(i+1, niter)
-    view_map.update(model.dem, model.lakes, title=disp_niter)
+    terrainlib.update(model.dem, model.lakes, title=disp_niter)
     print(disp_niter)
     print('Diffusion')
     model.diffusion(dt)
@@ -109,8 +105,8 @@ for i in range(niter):
 print('Done!')
 
 # Twist the grid
-bx, by = bounds.make_bounds(model.dirs, model.rivers)
-offset_x, offset_y = bounds.twist(bx, by, bounds.get_fixed(model.dirs))
+bx, by = terrainlib.make_bounds(model.dirs, model.rivers)
+offset_x, offset_y = terrainlib.twist(bx, by, terrainlib.get_fixed(model.dirs))
 
 # Convert offset in 8-bits
 offset_x = np.clip(np.floor(offset_x * 256), -128, 127)
@@ -121,16 +117,16 @@ if not os.path.isdir('data'):
     os.mkdir('data')
 os.chdir('data')
 # Save the files
-save(model.dem, 'dem', dtype='>i2')
-save(model.lakes, 'lakes', dtype='>i2')
-save(offset_x, 'offset_x', dtype='i1')
-save(offset_y, 'offset_y', dtype='i1')
+terrainlib.save(model.dem, 'dem', dtype='>i2')
+terrainlib.save(model.lakes, 'lakes', dtype='>i2')
+terrainlib.save(offset_x, 'offset_x', dtype='i1')
+terrainlib.save(offset_y, 'offset_y', dtype='i1')
 
-save(model.dirs, 'dirs', dtype='u1')
-save(model.rivers, 'rivers', dtype='>u4')
+terrainlib.save(model.dirs, 'dirs', dtype='u1')
+terrainlib.save(model.rivers, 'rivers', dtype='>u4')
 
 with open('size', 'w') as sfile:
     sfile.write('{:d}\n{:d}'.format(mapsize+1, mapsize+1))
 
-view_map.stats(model.dem, model.lakes)
-view_map.plot(model.dem, model.lakes, title='Final map')
+terrainlib.stats(model.dem, model.lakes)
+terrainlib.plot(model.dem, model.lakes, title='Final map')
