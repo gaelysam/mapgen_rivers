@@ -7,35 +7,51 @@ import sys
 
 import terrainlib
 
-### READ SETTINGS
+### PARSE COMMAND-LINE ARGUMENTS
 argc = len(sys.argv)
 
 config_file = 'terrain.conf'
+output_dir = 'data'
 params_from_args = {}
-i = 1
+i = 1 # Index of arguments
+j = 1 # Number of 'orphan' arguments (the ones that are not preceded by '--something')
 while i < argc:
     arg = sys.argv[i]
     if arg[:2] == '--':
         pname = arg[2:]
-        if i+1 < argc:
+        v = None
+        split = pname.split('=', maxsplit=1)
+        if len(split) == 2:
+            pname, v = split
+        elif i+1 < argc:
+            v = sys.argv[i+1]
+
+        if v is not None:
             if pname == 'config':
-                config_file = sys.argv[i+1]
+                config_file = v
+            elif pname == 'output':
+                output_dir = v
             else:
-                params_from_args[pname] = sys.argv[i+1]
+                params_from_args[pname] = v
         i += 2
     else:
-        config_file = arg
+        if j == 1:
+            config_file = arg
+        elif j == 2:
+            output_dir = arg
         i += 1
+        j += 1
+
+print(config_file, output_dir)
 
 params = terrainlib.read_config_file(config_file)
 params.update(params_from_args) # Params given from args prevail against conf file
 
-print(params)
-
+### READ SETTINGS
 def get_setting(name, default):
-	if name in params:
-		return params[name]
-	return default
+    if name in params:
+        return params[name]
+    return default
 
 mapsize = int(get_setting('mapsize', 1000))
 scale = float(get_setting('scale', 400.0))
@@ -52,9 +68,6 @@ flex_radius = float(get_setting('flex_radius', 20.0))
 
 time = float(get_setting('time', 10.0))
 niter = int(get_setting('niter', 10))
-
-# Always place in this script's parent directory
-os.chdir(os.path.dirname(sys.argv[0]))
 
 ### MAKE INITIAL TOPOGRAPHY
 n = np.zeros((mapsize+1, mapsize+1))
@@ -113,9 +126,9 @@ offset_x = np.clip(np.floor(offset_x * 256), -128, 127)
 offset_y = np.clip(np.floor(offset_y * 256), -128, 127)
 
 ### SAVE OUTPUT
-if not os.path.isdir('data'):
-    os.mkdir('data')
-os.chdir('data')
+if not os.path.isdir(output_dir):
+    os.mkdir(output_dir)
+os.chdir(output_dir)
 # Save the files
 terrainlib.save(model.dem, 'dem', dtype='>i2')
 terrainlib.save(model.lakes, 'lakes', dtype='>i2')
