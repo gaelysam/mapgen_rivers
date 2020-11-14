@@ -20,33 +20,53 @@ try:
 except ImportError: # No module matplotlib
     has_matplotlib = False
 
+if has_matplotlib:
+    def view_map(dem, lakes, scale=1, title=None):
+        if not has_matplotlib:
+            return
+        lakes_sea = np.maximum(lakes, 0)
+        water = np.maximum(lakes_sea - dem, 0)
+        max_elev = lakes_sea.max()
+        max_depth = water.max()
 
-def view_map(dem, lakes, scale):
-    if not has_matplotlib:
-        return
-    lakes_sea = np.maximum(lakes, 0)
-    water = np.maximum(lakes_sea - dem, 0)
-    max_elev = lakes_sea.max()
-    max_depth = water.max()
+        ls = mcl.LightSource(azdeg=315, altdeg=45)
+        rgb = ls.shade(lakes_sea, cmap=cmap1, vert_exag=1/scale, blend_mode='soft', vmin=0, vmax=max_elev)
 
-    ls = mcl.LightSource(azdeg=315, altdeg=45)
-    rgb = ls.shade(lakes_sea, cmap=cmap1, vert_exag=1/scale, blend_mode='soft', vmin=0, vmax=max_elev)
+        (X, Y) = dem.shape
+        extent = (0, Y*scale, 0, X*scale)
+        plt.imshow(np.flipud(rgb), extent=extent, interpolation='antialiased')
+        alpha = (water > 0).astype('u1')
+        plt.imshow(np.flipud(water), alpha=np.flipud(alpha), cmap=cmap2, extent=extent, vmin=0, vmax=max_depth, interpolation='antialiased')
 
-    (X, Y) = dem.shape
-    extent = (0, Y*scale, 0, X*scale)
-    plt.imshow(np.flipud(rgb), extent=extent, interpolation='antialiased')
-    alpha = (water > 0).astype('u1')
-    plt.imshow(np.flipud(water), alpha=np.flipud(alpha), cmap=cmap2, extent=extent, vmin=0, vmax=max_depth, interpolation='antialiased')
+        sm1 = plt.cm.ScalarMappable(cmap=cmap1, norm=plt.Normalize(vmin=0, vmax=max_elev))
+        plt.colorbar(sm1).set_label('Elevation')
 
-    sm1 = plt.cm.ScalarMappable(cmap=cmap1, norm=plt.Normalize(vmin=0, vmax=max_elev))
-    plt.colorbar(sm1).set_label('Altitude')
+        sm2 = plt.cm.ScalarMappable(cmap=cmap2, norm=plt.Normalize(vmin=0, vmax=max_depth))
+        plt.colorbar(sm2).set_label('Water depth')
 
-    sm2 = plt.cm.ScalarMappable(cmap=cmap2, norm=plt.Normalize(vmin=0, vmax=max_depth))
-    plt.colorbar(sm2).set_label('Profondeur d\'eau')
+        plt.xlabel('X')
+        plt.ylabel('Z')
 
-    plt.show()
+        if title is not None:
+            plt.title(title, fontweight='bold')
 
-def map_stats(dem, lake_dem, scale):
+    def update(*args, t=0.01, **kwargs):
+        plt.clf()
+        view_map(*args, **kwargs)
+        plt.pause(t)
+
+    def plot(*args, **kwargs):
+        plt.clf()
+        view_map(*args, **kwargs)
+        plt.show()
+
+else:
+    def update(*args, **kwargs):
+        pass
+    def plot(*args, **kwargs):
+        pass
+
+def stats(dem, lake_dem, scale=1):
     surface = dem.size
 
     continent = lake_dem >= 0
@@ -57,7 +77,8 @@ def map_stats(dem, lake_dem, scale):
 
     print('---   General    ---')
     print('Grid size:    {:5d}x{:5d}'.format(dem.shape[0], dem.shape[1]))
-    print('Map size:     {:5d}x{:5d}'.format(int(dem.shape[0]*scale), int(dem.shape[1]*scale)))
+    if scale > 1:
+        print('Map size:     {:5d}x{:5d}'.format(int(dem.shape[0]*scale), int(dem.shape[1]*scale)))
     print()
     print('---   Surfaces   ---')
     print('Continents:        {:6.2%}'.format(continent_surface/surface))
@@ -94,5 +115,5 @@ if __name__ == "__main__":
     dem = load_map('dem', '>i2', shape)
     lakes = load_map('lakes', '>i2', shape)
 
-    map_stats(dem, lakes, scale)
-    view_map(dem, lakes, scale)
+    stats(dem, lakes, scale=scale)
+    plot(dem, lakes, scale)

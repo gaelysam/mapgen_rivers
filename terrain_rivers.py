@@ -9,6 +9,8 @@ import os
 import sys
 import settings
 
+import view_map
+
 # Always place in this script's parent directory
 os.chdir(os.path.dirname(sys.argv[0]))
 argc = len(sys.argv)
@@ -65,6 +67,7 @@ nn = n*vscale + offset
 # Initialize landscape evolution model
 print('Initializing model')
 model = EvolutionModel(nn, K=1, m=0.35, d=1, sea_level=0, flex_radius=flex_radius)
+view_map.update(model.dem, model.lakes, t=5, title='Initializing...')
 
 dt = time/niter
 
@@ -73,7 +76,9 @@ print('Initial flow calculation')
 model.calculate_flow()
 
 for i in range(niter):
-    print('Iteration {:d} of {:d}'.format(i+1, niter))
+    disp_niter = 'Iteration {:d} of {:d}...'.format(i+1, niter)
+    view_map.update(model.dem, model.lakes, title=disp_niter)
+    print(disp_niter)
     print('Diffusion')
     model.diffusion(dt)
     print('Advection')
@@ -83,7 +88,7 @@ for i in range(niter):
     print('Flow calculation')
     model.calculate_flow()
 
-print('Done')
+print('Done!')
 
 # Twist the grid
 bx, by = bounds.make_bounds(model.dirs, model.rivers)
@@ -108,9 +113,5 @@ save(model.rivers, 'rivers', dtype='>u4')
 with open('size', 'w') as sfile:
     sfile.write('{:d}\n{:d}'.format(mapsize+1, mapsize+1))
 
-# Display the map if matplotlib is found
-try:
-    from view_map import view_map
-    view_map(model.dem, model.lakes, model.rivers)
-except:
-    pass
+view_map.stats(model.dem, model.lakes)
+view_map.plot(model.dem, model.lakes, title='Final map')
