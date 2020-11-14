@@ -1,5 +1,10 @@
+import os.path
+
 def read_config_file(fname):
     settings = {}
+
+    if not os.path.isfile(fname):
+        return settings
 
     with open(fname, 'r') as f:
         for line in f:

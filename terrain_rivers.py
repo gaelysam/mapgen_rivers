@@ -15,29 +15,28 @@ import view_map
 os.chdir(os.path.dirname(sys.argv[0]))
 argc = len(sys.argv)
 
-params = {}
+config_file = 'terrain.conf'
 
 if argc > 1:
-	if os.path.isfile(sys.argv[1]):
-		params = settings.read_config_file(sys.argv[1])
-	else:
-		mapsize = int(sys.argv[1])
+    config_file = sys.argv[1]
+
+params = settings.read_config_file(config_file)
 
 def get_setting(name, default):
 	if name in params:
 		return params[name]
 	return default
 
-mapsize = int(get_setting('mapsize', 400))
-scale = float(get_setting('scale', 200.0))
-vscale = float(get_setting('vscale', 200.0))
+mapsize = int(get_setting('mapsize', 1000))
+scale = float(get_setting('scale', 400.0))
+vscale = float(get_setting('vscale', 300.0))
 offset = float(get_setting('offset', 0.0))
-persistence = float(get_setting('persistence', 0.5))
+persistence = float(get_setting('persistence', 0.6))
 lacunarity = float(get_setting('lacunarity', 2.0))
 
 K = float(get_setting('K', 1.0))
 m = float(get_setting('m', 0.35))
-d = float(get_setting('d', 1.0))
+d = float(get_setting('d', 0.8))
 sea_level = float(get_setting('sea_level', 0.0))
 flex_radius = float(get_setting('flex_radius', 20.0))
 
