@@ -62,7 +62,7 @@ lacunarity = float(get_setting('lacunarity', 2.0))
 
 K = float(get_setting('K', 1.0))
 m = float(get_setting('m', 0.35))
-d = float(get_setting('d', 0.8))
+d = float(get_setting('d', 0.2))
 sea_level = float(get_setting('sea_level', 0.0))
 flex_radius = float(get_setting('flex_radius', 20.0))
 
