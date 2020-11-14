@@ -214,7 +214,7 @@ local function generate(minp, maxp, seed)
 		biomegen.generate_all(data, a, vm, minp, maxp, seed)
 	else
 		vm:set_data(data)
-		mietest.generate_ores(vm, minp, maxp)
+		minetest.generate_ores(vm, minp, maxp)
 	end
 
 	vm:set_lighting({day = 0, night = 0})
