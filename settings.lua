@@ -49,6 +49,6 @@ mapgen_rivers.max_catchment = get_settings('max_catchment', 'float', 40000)
 mapgen_rivers.riverbed_slope = get_settings('riverbed_slope', 'float', 0.4) * mapgen_rivers.blocksize
 mapgen_rivers.distort = get_settings('distort', 'bool', true)
 mapgen_rivers.biomes = get_settings('biomes', 'bool', true)
-mapgen_rivers.glaciers = get_settings('glaciers', 'bool', true)
+mapgen_rivers.glaciers = get_settings('glaciers', 'bool', false)
 mapgen_rivers.glacier_factor = get_settings('glacier_factor', 'float', 8)
 mapgen_rivers.elevation_chill = get_settings('elevation_chill', 'float', 0.25)

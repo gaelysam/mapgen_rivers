@@ -37,7 +37,7 @@ mapgen_rivers_biomes (Biomes) bool true
 #    Whether to enable glaciers.
 #    Glaciers are widened river sections, covered by ice, that are generated in
 #    very cold areas.
-mapgen_rivers_glaciers (Glaciers) bool true
+mapgen_rivers_glaciers (Glaciers) bool false
 
 #    River channels are widened by this factor if they are a glacier.
 mapgen_rivers_glacier_widening_factor (Glacier widening factor) float 8.0 1.0 20.0
