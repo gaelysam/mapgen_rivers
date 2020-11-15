@@ -1,0 +1,49 @@
+# File containing all settings for 'mapgen_rivers' mod.
+
+#    Represents horizontal map scale. Every cell of the grid will be upscaled to
+#    a square of this size.
+#    For example if the grid size is 1000x1000 and block size is 12,
+#    the actual size of the map will be 15000.
+mapgen_rivers_blocksize (Block size) float 12.0 2.0 40.0
+
+#    Sea level used by mapgen_rivers
+mapgen_rivers_sea_level (Sea level) int 1
+
+#    Minimal catchment area for a river to be drawn, in grid cells
+#    (1 cell = blocksize x blocksize).
+#    Lower value means bigger river density
+mapgen_rivers_min_catchment (Minimal catchment area) float 25.0 1.0 1000.0
+
+#    Catchment area in grid cells (1 grid cell = blocksize x blocksize)
+#    at which rivers reach their maximal width of 2*blocksize.
+#    Higher value means a river needs to receive more tributaries to grow in width.
+mapgen_rivers_max_catchment (Maximal catchment area) float 40000.0 1000.0 10000000.0
+
+#    Lateral slope of the riverbed.
+#    Higher value means deeper rivers.
+mapgen_rivers_riverbed_slope (Riverbed slope) float 0.4 0.0 2.0
+
+#    Enable horizontal distorsion (shearing) of landscape, to break the regularity
+#    of grid cells and allow overhangs.
+#    Distorsion uses two 3D noises and thus is intensive in terms of computing time.
+mapgen_rivers_distort (Distorsion) bool true
+
+#    Enable biome generation.
+#    If 'biomegen' mod is installed, 'mapgen_rivers' will generate biomes from the
+#    native biome system. If 'biomegen' is not present, will generate only grass and
+#    snow.
+mapgen_rivers_biomes (Biomes) bool true
+
+#    Whether to enable glaciers.
+#    Glaciers are widened river sections, covered by ice, that are generated in
+#    very cold areas.
+mapgen_rivers_glaciers (Glaciers) bool true
+
+#    River channels are widened by this factor if they are a glacier.
+mapgen_rivers_glacier_widening_factor (Glacier widening factor) float 8.0 1.0 20.0
+
+#    Temperature value decreases by this quantity for every node, vertically.
+#    This results in mountains being more covered by snow.
+mapgen_rivers_elevation_chill (Elevation chill) float 0.25 0.0 5.0
+
+# Noises: to be added. For now they are hardcoded.
