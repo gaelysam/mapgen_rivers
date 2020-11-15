@@ -55,6 +55,7 @@ if has_matplotlib:
     def plot(*args, **kwargs):
         plt.clf()
         view_map(*args, **kwargs)
+        plt.pause(0.01)
         plt.show()
 
 else:

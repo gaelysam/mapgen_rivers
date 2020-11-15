@@ -142,4 +142,6 @@ with open('size', 'w') as sfile:
     sfile.write('{:d}\n{:d}'.format(mapsize+1, mapsize+1))
 
 terrainlib.stats(model.dem, model.lakes)
-terrainlib.plot(model.dem, model.lakes, title='Final map')
+print()
+print('Grid is ready for use!')
+terrainlib.plot(model.dem, model.lakes, title='Final grid, ready for use!')
