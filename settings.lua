@@ -22,8 +22,11 @@ local function get_settings(key, dtype, default)
 		elseif dtype == "float" then
 			conf_val = tonumber(conf_val)
 			storage:set_float(key, conf_val)
-		elseif dtype == "string" or dtype == "bool" then
+		else
 			storage:set_string(key, conf_val)
+			if dtype == "bool" then
+				conf_val = conf_val == 'true'
+			end
 		end
 
 		return conf_val
