@@ -23,8 +23,10 @@ while i < argc:
         split = pname.split('=', maxsplit=1)
         if len(split) == 2:
             pname, v = split
+            i += 1
         elif i+1 < argc:
             v = sys.argv[i+1]
+            i += 2
 
         if v is not None:
             if pname == 'config':
@@ -33,7 +35,6 @@ while i < argc:
                 output_dir = v
             else:
                 params_from_args[pname] = v
-        i += 2
     else:
         if j == 1:
             config_file = arg
