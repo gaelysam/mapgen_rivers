@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import sys, traceback
 
 has_matplotlib = True
 try:
@@ -19,8 +20,6 @@ except ImportError: # No module matplotlib
 
 if has_matplotlib:
     def view_map(dem, lakes, scale=1, title=None):
-        if not has_matplotlib:
-            return
         lakes_sea = np.maximum(lakes, 0)
         water = np.maximum(lakes_sea - dem, 0)
         max_elev = lakes_sea.max()
@@ -48,15 +47,21 @@ if has_matplotlib:
             plt.title(title, fontweight='bold')
 
     def update(*args, t=0.01, **kwargs):
-        plt.clf()
-        view_map(*args, **kwargs)
-        plt.pause(t)
+        try:
+            plt.clf()
+            view_map(*args, **kwargs)
+            plt.pause(t)
+        except:
+            traceback.print_exception(*sys.exc_info())
 
     def plot(*args, **kwargs):
-        plt.clf()
-        view_map(*args, **kwargs)
-        plt.pause(0.01)
-        plt.show()
+        try:
+            plt.clf()
+            view_map(*args, **kwargs)
+            plt.pause(0.01)
+            plt.show()
+        except Exception as e:
+            traceback.print_exception(*sys.exc_info())
 
 else:
     def update(*args, **kwargs):
