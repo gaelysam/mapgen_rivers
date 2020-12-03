@@ -71,8 +71,8 @@ class EvolutionModel:
             self.calculate_flow()
         else:
             self.lakes = dem
-            self.dirs = np.zeros(dem.shape, dtype='u1')
-            self.rivers = np.zeros(dem.shape, dtype='u4')
+            self.dirs = np.zeros(dem.shape, dtype=int)
+            self.rivers = np.zeros(dem.shape, dtype=int)
             self.flow_uptodate = False
 
     def calculate_flow(self):
