@@ -14,7 +14,7 @@ neighbours_dirs = np.array([
     [0,1,0],
     [2,0,4],
     [0,3,0],
-], dtype='u1')
+], dtype=int)
 
 neighbours_pattern = neighbours_dirs > 0
 
@@ -49,7 +49,7 @@ def flow_dirs_lakes(dem, random=0):
     # Make a binary heap
     heapq.heapify(borders)
 
-    dirs = np.zeros((Y+2, X+2), dtype='u1')
+    dirs = np.zeros((Y+2, X+2), dtype=int)
     dirs[-2:,:] = 1 # Border pixels flow outside the map
     dirs[:,-2:] = 2
     dirs[ :2,:] = 3
@@ -85,7 +85,7 @@ def accumulate(dirs, dem=None):
     (Y, X) = dirs.shape
     dirs_margin = np.zeros((Y+2,X+2))-1
     dirs_margin[1:-1,1:-1] = dirs
-    quantity = np.zeros((Y, X), dtype='i4')
+    quantity = np.zeros((Y, X), dtype=int)
 
     def calculate_quantity(y, x):
         if quantity[y,x] > 0:
