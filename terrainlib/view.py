@@ -22,11 +22,11 @@ if has_matplotlib:
     def view_map(dem, lakes, scale=1, title=None):
         lakes_sea = np.maximum(lakes, 0)
         water = np.maximum(lakes_sea - dem, 0)
-        max_elev = lakes_sea.max()
+        max_elev = dem.max()
         max_depth = water.max()
 
         ls = mcl.LightSource(azdeg=315, altdeg=45)
-        rgb = ls.shade(lakes_sea, cmap=cmap1, vert_exag=1/scale, blend_mode='soft', vmin=0, vmax=max_elev)
+        rgb = ls.shade(dem, cmap=cmap1, vert_exag=1/scale, blend_mode='soft', vmin=0, vmax=max_elev)
 
         (X, Y) = dem.shape
         extent = (0, Y*scale, 0, X*scale)
@@ -69,13 +69,13 @@ else:
     def plot(*args, **kwargs):
         pass
 
-def stats(dem, lake_dem, scale=1):
+def stats(dem, lakes, scale=1):
     surface = dem.size
 
-    continent = lake_dem >= 0
+    continent = np.maximum(dem, lakes) >= 0
     continent_surface = continent.sum()
 
-    lake = continent & (lake_dem>dem)
+    lake = continent & (lakes>dem)
     lake_surface = lake.sum()
 
     print('---   General    ---')

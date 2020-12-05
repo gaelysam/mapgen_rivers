@@ -11,12 +11,6 @@ def advection(dem, dirs, rivers, time, K=1, m=0.5, sea_level=0):
     v = K * flux^m
     """
 
-    dirs = dirs.copy()
-    dirs[0,:] = 0
-    dirs[-1,:] = 0
-    dirs[:,0] = 0
-    dirs[:,-1] = 0
-
     adv_time = 1 / (K*rivers**m) # For every pixel, calculate the time an "erosion wave" will need to cross it.
     dem = np.maximum(dem, sea_level)
     dem_new = np.zeros(dem.shape)
@@ -51,7 +45,7 @@ def advection(dem, dirs, rivers, time, K=1, m=0.5, sea_level=0):
             c = remaining / adv_time[y0,x0]
             dem_new[y,x] = c*dem[y1,x1] + (1-c)*dem[y0,x0] # If between 2 pixels, perform linear interpolation.
 
-    return np.minimum(dem, dem_new)
+    return dem_new
 
 def diffusion(dem, time, d=1):
     radius = d * time**.5
@@ -80,7 +74,7 @@ class EvolutionModel:
         self.flow_uptodate = True
 
     def advection(self, time):
-        dem = advection(self.lakes, self.dirs, self.rivers, time, K=self.K, m=self.m, sea_level=self.sea_level)
+        dem = advection(np.maximum(self.dem, self.lakes), self.dirs, self.rivers, time, K=self.K, m=self.m, sea_level=self.sea_level)
         self.dem = np.minimum(dem, self.dem)
         self.flow_uptodate = False
 
