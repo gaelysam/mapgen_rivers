@@ -153,7 +153,7 @@ def flow(dem):
 
     waterq = accumulate_flow(dirs2)
 
-    return dirs2, np.maximum(basins[basin_id], dem), waterq
+    return dirs2, basins[basin_id], waterq
 
 def accumulate_flow(dirs):
     ndonors = np.zeros(dirs.shape, dtype=int)
