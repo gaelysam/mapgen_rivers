@@ -2,6 +2,16 @@ import numpy as np
 import numpy.random as npr
 from collections import defaultdict
 
+# This file provide functions to construct the river tree from an elevation model.
+# Based on a research paper:
+#   | Cordonnier, G., Bovy, B., and Braun, J.:
+#   | A versatile, linear complexity algorithm for flow routing in topographies with depressions,
+#   | Earth Surf. Dynam., 7, 549–562, https://doi.org/10.5194/esurf-7-549-2019, 2019.
+# Big thanks to them for releasing this paper under a free license ! :)
+
+# The algorithm here makes use of most of the paper's concepts, including the Planar Boruvka algorithm.
+# Only flow_local and accumulate_flow are custom algorithms.
+
 def flow_local(plist):
     """
     Determines a flow direction based on denivellation for every neighbouring node.
