@@ -6,8 +6,8 @@ def make_bounds(dirs, rivers):
     """
 
     (Y, X) = dirs.shape
-    bounds_h = np.zeros((Y, X-1), dtype='i4')
-    bounds_v = np.zeros((Y-1, X), dtype='i4')
+    bounds_h = np.zeros((Y, X-1), dtype=rivers.dtype)
+    bounds_v = np.zeros((Y-1, X), dtype=rivers.dtype)
 
     bounds_v += (rivers * (dirs==1))[:-1,:]
     bounds_h += (rivers * (dirs==2))[:,:-1]
