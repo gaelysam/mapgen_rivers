@@ -81,8 +81,8 @@ params = {
 }
 
 # Determine noise offset randomly
-xbase = np.random.randint(65536)
-ybase = np.random.randint(65536)
+xbase = np.random.randint(8192)-4096
+ybase = np.random.randint(8192)-4096
 
 # Generate the noise
 for x in range(mapsize+1):
