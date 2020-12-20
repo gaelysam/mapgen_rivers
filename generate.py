@@ -94,14 +94,12 @@ nn = n*vscale + offset
 ### COMPUTE LANDSCAPE EVOLUTION
 # Initialize landscape evolution model
 print('Initializing model')
-model = terrainlib.EvolutionModel(nn, K=1, m=0.35, d=1, sea_level=0, flex_radius=flex_radius)
+model = terrainlib.EvolutionModel(nn, K=K, m=m, d=d, sea_level=sea_level, flex_radius=flex_radius)
 terrainlib.update(model.dem, model.lakes, t=5, title='Initializing...')
 
 dt = time/niter
 
 # Run the model's processes: the order in which the processes are run is arbitrary and could be changed.
-print('Initial flow calculation')
-model.calculate_flow()
 
 for i in range(niter):
     disp_niter = 'Iteration {:d} of {:d}...'.format(i+1, niter)
@@ -109,12 +107,16 @@ for i in range(niter):
     print(disp_niter)
     print('Diffusion')
     model.diffusion(dt)
+    print('Flow calculation')
+    model.calculate_flow()
+    terrainlib.update(model.dem, model.lakes, title=disp_niter)
     print('Advection')
     model.advection(dt)
     print('Isostatic equilibration')
     model.adjust_isostasy()
-    print('Flow calculation')
-    model.calculate_flow()
+
+print('Last flow calculation')
+model.calculate_flow()
 
 print('Done!')
 
