@@ -1,5 +1,8 @@
 # File containing all settings for 'mapgen_rivers' mod.
 
+#    Whether the map should be centered at x=0, z=0.
+mapgen_rivers_center (Center map) bool false
+
 #    Represents horizontal map scale. Every cell of the grid will be upscaled to
 #    a square of this size.
 #    For example if the grid size is 1000x1000 and block size is 12,

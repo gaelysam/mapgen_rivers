@@ -59,6 +59,12 @@ end
 local blocksize = mapgen_rivers.blocksize
 local min_catchment = mapgen_rivers.min_catchment
 local max_catchment = mapgen_rivers.max_catchment
+local map_offset, map_offset_blocks
+local center = mapgen_rivers.center
+if center then
+	map_offset = {x=math.floor(X/2), z=math.floor(Z/2)}
+	map_offset_blocks = {x=map_offset.x/blocksize, z=map_offset.z/blocksize}
+end
 
 -- Width coefficients: coefficients solving
 --   wfactor * min_catchment ^ wpower = 1/(2*blocksize)
@@ -89,6 +95,12 @@ local init = false
 -- On map generation, determine into which polygon every point (in 2D) will fall.
 -- Also store polygon-specific data
 local function make_polygons(minp, maxp)
+	if center then
+		minp = {x=minp.x+map_offset.x, z=minp.z+map_offset.z}
+		maxp = {x=maxp.x+map_offset.x, z=maxp.z+map_offset.z}
+		map_offset_x_blocks = map_offset.x / blocksize
+	end
+
 	if not init then
 		if glaciers then
 			noise_heat = minetest.get_perlin(mapgen_rivers.noise_params.heat)
@@ -163,6 +175,13 @@ local function make_polygons(minp, maxp)
 			local poly_dem = {dem[iA], dem[iB], dem[iC], dem[iD]}
 			polygon.dem = poly_dem
 			polygon.lake = math.min(lakes[iA], lakes[iB], lakes[iC], lakes[iD])
+
+			if center then
+				for i=1, 4 do
+					poly_x[i] = poly_x[i] - map_offset_blocks.x
+					poly_z[i] = poly_z[i] - map_offset_blocks.z
+				end
+			end
 
 			-- Now, rivers.
 			-- Load river flux values for the 4 corners

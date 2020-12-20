@@ -45,6 +45,7 @@ local function get_settings(key, dtype, default)
 	end
 end
 
+mapgen_rivers.center = get_settings('center', 'bool', false)
 mapgen_rivers.blocksize = get_settings('blocksize', 'int', 12)
 mapgen_rivers.sea_level = get_settings('sea_level', 'int', 1)
 mapgen_rivers.min_catchment = get_settings('min_catchment', 'float', 25)
