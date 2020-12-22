@@ -30,7 +30,7 @@ local function heightmaps(minp, maxp)
 			local poly = polygons[i]
 
 			if poly then
-				local xf, zf = transform_quadri(poly.x, poly.z, x/blocksize, z/blocksize)
+				local xf, zf = transform_quadri(poly.x, poly.z, x, z)
 				local i00, i01, i11, i10 = unpack(poly.i)
 
 				-- Load river width on 4 edges and corners

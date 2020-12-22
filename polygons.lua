@@ -59,11 +59,11 @@ end
 local blocksize = mapgen_rivers.blocksize
 local min_catchment = mapgen_rivers.min_catchment
 local max_catchment = mapgen_rivers.max_catchment
-local map_offset, map_offset_blocks
-local center = mapgen_rivers.center
-if center then
-	map_offset = {x=math.floor(X/2), z=math.floor(Z/2)}
-	map_offset_blocks = {x=map_offset.x/blocksize, z=map_offset.z/blocksize}
+
+local map_offset = {x=0, z=0}
+if mapgen_rivers.center then
+	map_offset.x = blocksize*X/2
+	map_offset.z = blocksize*Z/2
 end
 
 -- Width coefficients: coefficients solving
@@ -95,11 +95,8 @@ local init = false
 -- On map generation, determine into which polygon every point (in 2D) will fall.
 -- Also store polygon-specific data
 local function make_polygons(minp, maxp)
-	if center then
-		minp = {x=minp.x+map_offset.x, z=minp.z+map_offset.z}
-		maxp = {x=maxp.x+map_offset.x, z=maxp.z+map_offset.z}
-		map_offset_x_blocks = map_offset.x / blocksize
-	end
+	print("Generating polygon map")
+	print(minp.x, maxp.x, minp.z, maxp.z)
 
 	if not init then
 		if glaciers then
@@ -112,8 +109,9 @@ local function make_polygons(minp, maxp)
 
 	local polygons = {}
 	-- Determine the minimum and maximum coordinates of the polygons that could be on the chunk, knowing that they have an average size of 'blocksize' and a maximal offset of 0.5 blocksize.
-	local xpmin, xpmax = math.max(math.floor(minp.x/blocksize - 0.5), 0), math.min(math.ceil(maxp.x/blocksize), X-2)
-	local zpmin, zpmax = math.max(math.floor(minp.z/blocksize - 0.5), 0), math.min(math.ceil(maxp.z/blocksize), Z-2)
+	local xpmin, xpmax = math.max(math.floor((minp.x+map_offset.x)/blocksize - 0.5), 0), math.min(math.ceil((maxp.x+map_offset.x)/blocksize + 0.5), X-2)
+	local zpmin, zpmax = math.max(math.floor((minp.z+map_offset.z)/blocksize - 0.5), 0), math.min(math.ceil((maxp.z+map_offset.z)/blocksize + 0.5), Z-2)
+	print(xpmin, xpmax, zpmin, zpmax)
 
 	-- Iterate over the polygons
 	for xp = xpmin, xpmax do
@@ -123,14 +121,27 @@ local function make_polygons(minp, maxp)
 			local iC = index(xp+1, zp+1)
 			local iD = index(xp, zp+1)
 			-- Extract the vertices of the polygon
-			local poly_x = {offset_x[iA]+xp, offset_x[iB]+xp+1, offset_x[iC]+xp+1, offset_x[iD]+xp}
-			local poly_z = {offset_z[iA]+zp, offset_z[iB]+zp, offset_z[iC]+zp+1, offset_z[iD]+zp+1}
+			local poly_x = {
+				(offset_x[iA]+xp)   * blocksize - map_offset.x,
+				(offset_x[iB]+xp+1) * blocksize - map_offset.x,
+				(offset_x[iC]+xp+1) * blocksize - map_offset.x,
+				(offset_x[iD]+xp)   * blocksize - map_offset.x,
+			}
+			local poly_z = {
+				(offset_z[iA]+zp)   * blocksize - map_offset.z,
+				(offset_z[iB]+zp)   * blocksize - map_offset.z,
+				(offset_z[iC]+zp+1) * blocksize - map_offset.z,
+				(offset_z[iD]+zp+1) * blocksize - map_offset.z,
+			}
+			if xp==xpmin and zp==zpmin then
+				print(xp, zp, poly_x[1], poly_z[1])
+			end
 			local polygon = {x=poly_x, z=poly_z, i={iA, iB, iC, iD}}
 
 			local bounds = {} -- Will be a list of the intercepts of polygon edges for every Z position (scanline algorithm)
 			-- Calculate the min and max Z positions 
-			local zmin = math.max(math.floor(blocksize*math.min(unpack(poly_z)))+1, minp.z)
-			local zmax = math.min(math.floor(blocksize*math.max(unpack(poly_z))), maxp.z)
+			local zmin = math.max(math.floor(math.min(unpack(poly_z)))+1, minp.z)
+			local zmax = math.min(math.floor(math.max(unpack(poly_z))), maxp.z)
 			-- And initialize the arrays
 			for z=zmin, zmax do
 				bounds[z] = {}
@@ -140,13 +151,13 @@ local function make_polygons(minp, maxp)
 			for i2=1, 4 do -- Loop on 4 edges
 				local z1, z2 = poly_z[i1], poly_z[i2]
 				-- Calculate the integer Z positions over which this edge spans
-				local lzmin = math.floor(blocksize*math.min(z1, z2))+1
-				local lzmax = math.floor(blocksize*math.max(z1, z2))
+				local lzmin = math.floor(math.min(z1, z2))+1
+				local lzmax = math.floor(math.max(z1, z2))
 				if lzmin <= lzmax then -- If there is at least one position in it
 					local x1, x2 = poly_x[i1], poly_x[i2]
 					-- Calculate coefficient of the equation defining the edge: X=aZ+b
 					local a = (x1-x2) / (z1-z2)
-					local b = blocksize*(x1 - a*z1)
+					local b = (x1 - a*z1)
 					for z=math.max(lzmin, minp.z), math.min(lzmax, maxp.z) do
 						-- For every Z position involved, add the intercepted X position in the table
 						table.insert(bounds[z], a*z+b)
@@ -176,13 +187,6 @@ local function make_polygons(minp, maxp)
 			polygon.dem = poly_dem
 			polygon.lake = math.min(lakes[iA], lakes[iB], lakes[iC], lakes[iD])
 
-			if center then
-				for i=1, 4 do
-					poly_x[i] = poly_x[i] - map_offset_blocks.x
-					poly_z[i] = poly_z[i] - map_offset_blocks.z
-				end
-			end
-
 			-- Now, rivers.
 			-- Load river flux values for the 4 corners
 			local riverA = river_width(rivers[iA])
@@ -190,16 +194,16 @@ local function make_polygons(minp, maxp)
 			local riverC = river_width(rivers[iC])
 			local riverD = river_width(rivers[iD])
 			if glaciers then -- Widen the river
-				if get_temperature(poly_x[1]*blocksize, poly_dem[1], poly_z[1]*blocksize) < 0 then
+				if get_temperature(poly_x[1], poly_dem[1], poly_z[1]) < 0 then
 					riverA = math.min(riverA*glacier_factor, 1)
 				end
-				if get_temperature(poly_x[2]*blocksize, poly_dem[2], poly_z[2]*blocksize) < 0 then
+				if get_temperature(poly_x[2], poly_dem[2], poly_z[2]) < 0 then
 					riverB = math.min(riverB*glacier_factor, 1)
 				end
-				if get_temperature(poly_x[3]*blocksize, poly_dem[3], poly_z[3]*blocksize) < 0 then
+				if get_temperature(poly_x[3], poly_dem[3], poly_z[3]) < 0 then
 					riverC = math.min(riverC*glacier_factor, 1)
 				end
-				if get_temperature(poly_x[4]*blocksize, poly_dem[4], poly_z[4]*blocksize) < 0 then
+				if get_temperature(poly_x[4], poly_dem[4], poly_z[4]) < 0 then
 					riverD = math.min(riverD*glacier_factor, 1)
 				end
 			end
