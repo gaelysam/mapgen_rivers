@@ -19,14 +19,16 @@ except ImportError: # No module matplotlib
     has_matplotlib = False
 
 if has_matplotlib:
-    def view_map(dem, lakes, scale=1, title=None):
-        lakes_sea = np.maximum(lakes, 0)
+    def view_map(dem, lakes, scale=1, sea_level=0.0, title=None):
+        lakes_sea = np.maximum(lakes, sea_level)
         water = np.maximum(lakes_sea - dem, 0)
         max_elev = dem.max()
         max_depth = water.max()
 
         ls = mcl.LightSource(azdeg=315, altdeg=45)
-        rgb = ls.shade(dem, cmap=cmap1, vert_exag=1/scale, blend_mode='soft', vmin=0, vmax=max_elev)
+        norm_ground = plt.Normalize(vmin=sea_level, vmax=max_elev)
+        norm_sea = plt.Normalize(vmin=0, vmax=max_depth)
+        rgb = ls.shade(dem, cmap=cmap1, vert_exag=1/scale, blend_mode='soft', norm=norm_ground)
 
         (X, Y) = dem.shape
         extent = (0, Y*scale, 0, X*scale)
@@ -34,10 +36,10 @@ if has_matplotlib:
         alpha = (water > 0).astype('u1')
         plt.imshow(np.flipud(water), alpha=np.flipud(alpha), cmap=cmap2, extent=extent, vmin=0, vmax=max_depth, interpolation='antialiased')
 
-        sm1 = plt.cm.ScalarMappable(cmap=cmap1, norm=plt.Normalize(vmin=0, vmax=max_elev))
+        sm1 = plt.cm.ScalarMappable(cmap=cmap1, norm=norm_ground)
         plt.colorbar(sm1).set_label('Elevation')
 
-        sm2 = plt.cm.ScalarMappable(cmap=cmap2, norm=plt.Normalize(vmin=0, vmax=max_depth))
+        sm2 = plt.cm.ScalarMappable(cmap=cmap2, norm=norm_sea)
         plt.colorbar(sm2).set_label('Water depth')
 
         plt.xlabel('X')

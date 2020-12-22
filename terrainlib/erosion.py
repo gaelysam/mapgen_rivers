@@ -49,6 +49,8 @@ def advection(dem, dirs, rivers, time, K=1, m=0.5, sea_level=0):
 
 def diffusion(dem, time, d=1):
     radius = d * time**.5
+    if radius == 0:
+        return dem
     return im.gaussian_filter(dem, radius, mode='reflect') # Diffusive erosion is a simple Gaussian blur
 
 class EvolutionModel:

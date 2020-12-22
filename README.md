@@ -76,6 +76,8 @@ Other parameters can be specified by `--parameter value`. Syntax `--parameter=va
 | `flex_radius` | Flexure radius. Wavelength over which loss/gain of mass is compensated by uplift/subsidence. This ensures that mountain ranges will not get eventually flattened by erosion, and that an equilibrium is reached. Geologically speaking, this implements [isostatic rebound](https://en.wikipedia.org/wiki/Isostasy). | `--flex_radius 20` |
 | `time`        | Simulated time of erosion modelling, in abstract units. | `--time 10` |
 | `niter`       | Number of iterations. Each iteration represents a time `time/niter`. | `--niter 10` |
+| `sea_level_variations` | Amplitude of sea level variations throughout the simulation (if any). | `--sea_level_variations 10` |
+| `sea_level_variations_time` | Characteristic time of variation for sea level, in the same units than `time`. Increasing it will result in slower variations between iterations. | `--sea_level_variations_time 1` |
 | | **Alternatives** |
 | `config`      | Another way to specify configuration file | `--config terrain_higher.conf` |
 | `output`      | Another way to specify output dir | `--output ~/.minetest/worlds/my_world/river_data` |
