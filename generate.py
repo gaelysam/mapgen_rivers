@@ -65,6 +65,8 @@ K = float(get_setting('K', 1.0))
 m = float(get_setting('m', 0.35))
 d = float(get_setting('d', 0.2))
 sea_level = float(get_setting('sea_level', 0.0))
+sea_level_variations = float(get_setting('sea_level_variations', 0.0))
+sea_level_variations_time = float(get_setting('sea_level_variations_time', 1.0))
 flex_radius = float(get_setting('flex_radius', 20.0))
 
 time = float(get_setting('time', 10.0))
@@ -80,9 +82,19 @@ params = {
     "lacunarity" : lacunarity,
 }
 
+params_sealevel = {
+    "octaves" : 1,
+    "persistence" : 1,
+    "lacunarity" : 2,
+}
+
 # Determine noise offset randomly
 xbase = np.random.randint(8192)-4096
 ybase = np.random.randint(8192)-4096
+if sea_level_variations != 0.0:
+    sea_ybase = np.random.randint(8192)-4096
+    sea_level_ref = noise.snoise2(time * (1-1/niter) / sea_level_variations, sea_ybase, **params_sealevel) * sea_level_variations
+    offset -= (sea_level_ref + sea_level)
 
 # Generate the noise
 for x in range(mapsize+1):
@@ -95,7 +107,7 @@ nn = n*vscale + offset
 # Initialize landscape evolution model
 print('Initializing model')
 model = terrainlib.EvolutionModel(nn, K=K, m=m, d=d, sea_level=sea_level, flex_radius=flex_radius)
-terrainlib.update(model.dem, model.lakes, t=5, title='Initializing...')
+terrainlib.update(model.dem, model.lakes, t=5, sea_level=model.sea_level, title='Initializing...')
 
 dt = time/niter
 
@@ -103,13 +115,15 @@ dt = time/niter
 
 for i in range(niter):
     disp_niter = 'Iteration {:d} of {:d}...'.format(i+1, niter)
-    terrainlib.update(model.dem, model.lakes, title=disp_niter)
+    if sea_level_variations != 0:
+        model.sea_level = noise.snoise2((i*dt)/sea_level_variations_time, sea_ybase, **params_sealevel) * sea_level_variations - sea_level_ref
+    terrainlib.update(model.dem, model.lakes, sea_level=model.sea_level, title=disp_niter)
     print(disp_niter)
     print('Diffusion')
     model.diffusion(dt)
     print('Flow calculation')
     model.calculate_flow()
-    terrainlib.update(model.dem, model.lakes, title=disp_niter)
+    terrainlib.update(model.dem, model.lakes, sea_level=model.sea_level, title=disp_niter)
     print('Advection')
     model.advection(dt)
     print('Isostatic equilibration')
