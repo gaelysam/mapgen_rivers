@@ -174,7 +174,7 @@ local function make_polygons(minp, maxp)
 
 			local poly_dem = {dem[iA], dem[iB], dem[iC], dem[iD]}
 			polygon.dem = poly_dem
-			polygon.lake = math.min(lakes[iA], lakes[iB], lakes[iC], lakes[iD])
+			polygon.lake = {lakes[iA], lakes[iB], lakes[iC], lakes[iD]}
 
 			if center then
 				for i=1, 4 do
