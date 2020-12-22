@@ -1,11 +1,30 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import noise
+from noise import snoise2
 import os
 import sys
 
 import terrainlib
+
+def noisemap(X, Y, scale=0.01, vscale=1.0, offset=0.0, log=False, **params):
+    # Determine noise offset randomly
+    xbase = np.random.randint(8192)-4096
+    ybase = np.random.randint(8192)-4096
+
+    if log:
+        vscale /= offset
+
+    # Generate the noise
+    n = np.zeros((X, Y))
+    for x in range(X):
+        for y in range(Y):
+            n[x,y] = snoise2(x/scale + xbase, y/scale + ybase, **params)
+
+    if log:
+        return np.exp(n*vscale) * offset
+    else:
+        return n*vscale + offset
 
 ### PARSE COMMAND-LINE ARGUMENTS
 argc = len(sys.argv)
@@ -75,8 +94,16 @@ niter = int(get_setting('niter', 10))
 ### MAKE INITIAL TOPOGRAPHY
 n = np.zeros((mapsize+1, mapsize+1))
 
+if sea_level_variations != 0.0:
+    sea_ybase = np.random.randint(8192)-4096
+    sea_level_ref = snoise2(time * (1-1/niter) / sea_level_variations, sea_ybase, **params_sealevel) * sea_level_variations
+    offset -= (sea_level_ref + sea_level)
+
 # Set noise parameters
 params = {
+    "offset" : offset,
+    "vscale" : vscale,
+    "scale" : scale,
     "octaves" : int(np.ceil(np.log2(mapsize)))+1,
     "persistence" : persistence,
     "lacunarity" : lacunarity,
@@ -88,25 +115,12 @@ params_sealevel = {
     "lacunarity" : 2,
 }
 
-# Determine noise offset randomly
-xbase = np.random.randint(8192)-4096
-ybase = np.random.randint(8192)-4096
-if sea_level_variations != 0.0:
-    sea_ybase = np.random.randint(8192)-4096
-    sea_level_ref = noise.snoise2(time * (1-1/niter) / sea_level_variations, sea_ybase, **params_sealevel) * sea_level_variations
-    offset -= (sea_level_ref + sea_level)
-
-# Generate the noise
-for x in range(mapsize+1):
-    for y in range(mapsize+1):
-        n[x,y] = noise.snoise2(x/scale + xbase, y/scale + ybase, **params)
-
-nn = n*vscale + offset
+n = noisemap(mapsize+1, mapsize+1, **params)
 
 ### COMPUTE LANDSCAPE EVOLUTION
 # Initialize landscape evolution model
 print('Initializing model')
-model = terrainlib.EvolutionModel(nn, K=K, m=m, d=d, sea_level=sea_level, flex_radius=flex_radius)
+model = terrainlib.EvolutionModel(n, K=K, m=m, d=d, sea_level=sea_level, flex_radius=flex_radius)
 terrainlib.update(model.dem, model.lakes, t=5, sea_level=model.sea_level, title='Initializing...')
 
 dt = time/niter
@@ -116,7 +130,7 @@ dt = time/niter
 for i in range(niter):
     disp_niter = 'Iteration {:d} of {:d}...'.format(i+1, niter)
     if sea_level_variations != 0:
-        model.sea_level = noise.snoise2((i*dt)/sea_level_variations_time, sea_ybase, **params_sealevel) * sea_level_variations - sea_level_ref
+        model.sea_level = snoise2((i*dt)/sea_level_variations_time, sea_ybase, **params_sealevel) * sea_level_variations - sea_level_ref
     terrainlib.update(model.dem, model.lakes, sea_level=model.sea_level, title=disp_niter)
     print(disp_niter)
     print('Diffusion')
