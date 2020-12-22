@@ -1,30 +1,54 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from noise import snoise2
+from noise import snoise2, snoise3
 import os
 import sys
 
 import terrainlib
 
-def noisemap(X, Y, scale=0.01, vscale=1.0, offset=0.0, log=False, **params):
-    # Determine noise offset randomly
-    xbase = np.random.randint(8192)-4096
-    ybase = np.random.randint(8192)-4096
+class noisemap:
+    def __init__(self, X, Y, scale=0.01, vscale=1.0, tscale=1.0, offset=0.0, log=None, xbase=None, ybase=None, **params):
+        # Determine noise offset randomly
+        if xbase is None:
+            xbase = np.random.randint(8192)-4096
+        if ybase is None:
+            ybase = np.random.randint(8192)-4096
+        self.xbase = xbase
+        self.ybase = ybase
+        self.X = X
+        self.Y = Y
+        self.scale = scale
+        if log:
+            vscale /= offset
+        self.vscale = vscale
+        self.tscale = tscale
+        self.offset = offset
+        self.log = log
+        self.params = params
 
-    if log:
-        vscale /= offset
+    def get2d(self):
+        n = np.zeros((self.X, self.Y))
+        for x in range(self.X):
+            for y in range(self.Y):
+                n[x,y] = snoise2(x/self.scale + self.xbase, y/self.scale + self.ybase, **self.params)
 
-    # Generate the noise
-    n = np.zeros((X, Y))
-    for x in range(X):
-        for y in range(Y):
-            n[x,y] = snoise2(x/scale + xbase, y/scale + ybase, **params)
+        if self.log:
+            return np.exp(n*self.vscale) * self.offset
+        else:
+            return n*self.vscale + self.offset
 
-    if log:
-        return np.exp(n*vscale) * offset
-    else:
-        return n*vscale + offset
+    def get3d(self, t=0):
+        t /= self.tscale
+        n = np.zeros((self.X, self.Y))
+        for x in range(self.X):
+            for y in range(self.Y):
+                n[x,y] = snoise3(x/self.scale + self.xbase, y/self.scale + self.ybase, t/self.tscale, **self.params)
+
+        if self.log:
+            return np.exp(n*self.vscale) * self.offset
+        else:
+            return n*self.vscale + self.offset
 
 ### PARSE COMMAND-LINE ARGUMENTS
 argc = len(sys.argv)
@@ -137,9 +161,9 @@ if sea_level_variations != 0.0:
     sea_level_ref = snoise2(time * (1-1/niter) / sea_level_variations, sea_ybase, **params_sealevel) * sea_level_variations
     params['offset'] -= (sea_level_ref + sea_level)
 
-n = noisemap(mapsize+1, mapsize+1, **params)
-m_map = noisemap(mapsize+1, mapsize+1, **params_m)
-K_map = noisemap(mapsize+1, mapsize+1, **params_K) / catchment_reference**m_map
+n = noisemap(mapsize+1, mapsize+1, **params).get2d()
+m_map = noisemap(mapsize+1, mapsize+1, **params_m).get2d()
+K_map = noisemap(mapsize+1, mapsize+1, **params_K).get2d() / catchment_reference**m_map
 
 import matplotlib.pyplot as plt
 plt.subplot(1,2,1)
