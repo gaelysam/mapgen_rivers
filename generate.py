@@ -111,17 +111,49 @@ params_sealevel = {
     "lacunarity" : 2,
 }
 
+catchment_reference = 10000
+params_K = {
+    "offset" : K * catchment_reference**m,
+    "vscale" : 50,
+    "scale" : 400,
+    "octaves" : 1,
+    "persistence" : 0.5,
+    "lacunarity" : 2,
+    "log" : True,
+}
+
+params_m = {
+    "offset" : m,
+    "vscale" : 0.25,
+    "scale" : 400,
+    "octaves" : 1,
+    "persistence" : 0.5,
+    "lacunarity" : 2,
+    "log" : True,
+}
+
 if sea_level_variations != 0.0:
     sea_ybase = np.random.randint(8192)-4096
     sea_level_ref = snoise2(time * (1-1/niter) / sea_level_variations, sea_ybase, **params_sealevel) * sea_level_variations
     params['offset'] -= (sea_level_ref + sea_level)
 
 n = noisemap(mapsize+1, mapsize+1, **params)
+m_map = noisemap(mapsize+1, mapsize+1, **params_m)
+K_map = noisemap(mapsize+1, mapsize+1, **params_K) / catchment_reference**m_map
+
+import matplotlib.pyplot as plt
+plt.subplot(1,2,1)
+plt.imshow(K_map)
+plt.colorbar()
+plt.subplot(1,2,2)
+plt.imshow(m_map)
+plt.colorbar()
+plt.show()
 
 ### COMPUTE LANDSCAPE EVOLUTION
 # Initialize landscape evolution model
 print('Initializing model')
-model = terrainlib.EvolutionModel(n, K=K, m=m, d=d, sea_level=sea_level, flex_radius=flex_radius, flow_method=flow_method)
+model = terrainlib.EvolutionModel(n, K=K_map, m=m_map, d=d, sea_level=sea_level, flex_radius=flex_radius, flow_method=flow_method)
 terrainlib.update(model.dem, model.lakes, t=5, sea_level=model.sea_level, title='Initializing...')
 
 dt = time/niter
