@@ -99,7 +99,25 @@ local function heightmaps(minp, maxp)
 					xf, zf
 				))
 
-				local lake_height = math.max(math.floor(poly.lake), terrain_height)
+				-- Spatial gradient of the interpolation
+				local slope_x = zf*(vdem[3]-vdem[4]) + (1-zf)*(vdem[2]-vdem[1]) < 0
+				local slope_z = xf*(vdem[3]-vdem[2]) + (1-xf)*(vdem[4]-vdem[1]) < 0
+				local lake_id = 0
+				if slope_x then
+					if slope_z then
+						lake_id = 3
+					else
+						lake_id = 2
+					end
+				else
+					if slope_z then
+						lake_id = 4
+					else
+						lake_id = 1
+					end
+				end
+				local lake_height = math.max(math.floor(poly.lake[lake_id]), terrain_height)
+
 				if imax > 0 and depth_factor_max > 0 then
 					terrain_height = math.min(math.max(lake_height, sea_level) - math.floor(1+depth_factor_max*riverbed_slope), terrain_height)
 				end
