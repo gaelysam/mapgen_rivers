@@ -55,6 +55,14 @@ Generic usage:
 - `conf_file`: Path to configuration file from which parameters should be read. If omitted, attempts to read in `terrain.conf`.
 - `output_dir`: Directory in which to save the grid data, defaults to `river_data/`. If it does not exist, it is created. If it already contains previous grid data, they are overwritten.
 
+#### Config files
+The mod currently includes 3 config files, providing different terrain styles:
+- `terrain_default.conf` generates the standard terrain, with highest elevations around 250 with sharp peaks, and otherwise hilly terrain.
+- `terrain_higher.conf` generates higher mountains (up to 400 nodes), and wider valleys.
+- `terrain_original.conf` provides a terrain similar to what was generated with the first release of `mapgen_rivers`.
+
+More work is needed to find better and more varied terrain styles.
+
 ### Complete list of parameters
 Other parameters can be specified by `--parameter value`. Syntax `--parameter=value` is also supported.
 
