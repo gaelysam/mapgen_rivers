@@ -86,8 +86,10 @@ class EvolutionModel:
         self.dem = diffusion(self.dem, time, d=self.d)
         self.flow_uptodate = False
 
-    def define_isostasy(self):
-        self.ref_isostasy = im.gaussian_filter(self.dem, self.flex_radius, mode='reflect') # Define a blurred version of the DEM that will be considered as the reference isostatic elevation.
+    def define_isostasy(self, dem=None):
+        if dem is None:
+            dem = self.dem
+        self.ref_isostasy = im.gaussian_filter(dem, self.flex_radius, mode='reflect') # Define a blurred version of the DEM that will be considered as the reference isostatic elevation.
 
     def adjust_isostasy(self, rate=1):
         isostasy = im.gaussian_filter(self.dem, self.flex_radius, mode='reflect') # Calculate blurred DEM

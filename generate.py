@@ -111,6 +111,7 @@ sea_level = float(get_setting('sea_level', 0.0))
 sea_level_variations = float(get_setting('sea_level_variations', 0.0))
 sea_level_variations_time = float(get_setting('sea_level_variations_time', 1.0))
 flex_radius = float(get_setting('flex_radius', 20.0))
+tectonics_time = float(get_setting('tectonics_time', 0.0))
 flow_method = get_setting('flow_method', 'semirandom')
 
 time = float(get_setting('time', 10.0))
@@ -160,7 +161,11 @@ if sea_level_variations != 0.0:
     sea_level_ref = snoise2(time * (1-1/niter) / sea_level_variations, sea_ybase, **params_sealevel) * sea_level_variations
     params['offset'] -= (sea_level_ref + sea_level)
 
-n = noisemap(mapsize+1, mapsize+1, **params).get2d()
+if tectonics_time == 0.0:
+    n = noisemap(mapsize+1, mapsize+1, **params).get2d()
+else:
+    terrain_noisemap = noisemap(mapsize+1, mapsize+1, tscale=tectonics_time, **params)
+    n = terrain_noisemap.get3d()
 m_map = noisemap(mapsize+1, mapsize+1, **params_m).get2d()
 K_map = noisemap(mapsize+1, mapsize+1, **params_K).get2d()
 
@@ -187,6 +192,9 @@ for i in range(niter):
     terrainlib.update(model.dem, model.lakes, sea_level=model.sea_level, title=disp_niter)
     print('Advection')
     model.advection(dt)
+    if tectonics_time != 0.0:
+        print('Isostasy reference redefinition')
+        model.define_isostasy(terrain_noisemap.get3d((i+1)*dt))
     print('Isostatic equilibration')
     model.adjust_isostasy()
 
