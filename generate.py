@@ -43,7 +43,7 @@ class noisemap:
         n = np.zeros((self.X, self.Y))
         for x in range(self.X):
             for y in range(self.Y):
-                n[x,y] = snoise3(x/self.scale + self.xbase, y/self.scale + self.ybase, t/self.tscale, **self.params)
+                n[x,y] = snoise3(x/self.scale + self.xbase, y/self.scale + self.ybase, t, **self.params)
 
         if self.log:
             return np.exp(n*self.vscale) * self.offset
@@ -135,10 +135,9 @@ params_sealevel = {
     "lacunarity" : 2,
 }
 
-catchment_reference = 10000
 params_K = {
-    "offset" : K * catchment_reference**m,
-    "vscale" : 50,
+    "offset" : K,
+    "vscale" : K,
     "scale" : 400,
     "octaves" : 1,
     "persistence" : 0.5,
@@ -148,7 +147,7 @@ params_K = {
 
 params_m = {
     "offset" : m,
-    "vscale" : 0.25,
+    "vscale" : m*0.5,
     "scale" : 400,
     "octaves" : 1,
     "persistence" : 0.5,
@@ -163,16 +162,7 @@ if sea_level_variations != 0.0:
 
 n = noisemap(mapsize+1, mapsize+1, **params).get2d()
 m_map = noisemap(mapsize+1, mapsize+1, **params_m).get2d()
-K_map = noisemap(mapsize+1, mapsize+1, **params_K).get2d() / catchment_reference**m_map
-
-import matplotlib.pyplot as plt
-plt.subplot(1,2,1)
-plt.imshow(K_map)
-plt.colorbar()
-plt.subplot(1,2,2)
-plt.imshow(m_map)
-plt.colorbar()
-plt.show()
+K_map = noisemap(mapsize+1, mapsize+1, **params_K).get2d()
 
 ### COMPUTE LANDSCAPE EVOLUTION
 # Initialize landscape evolution model
