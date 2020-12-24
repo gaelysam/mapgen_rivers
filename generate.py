@@ -95,11 +95,6 @@ niter = int(get_setting('niter', 10))
 ### MAKE INITIAL TOPOGRAPHY
 n = np.zeros((mapsize+1, mapsize+1))
 
-if sea_level_variations != 0.0:
-    sea_ybase = np.random.randint(8192)-4096
-    sea_level_ref = snoise2(time * (1-1/niter) / sea_level_variations, sea_ybase, **params_sealevel) * sea_level_variations
-    offset -= (sea_level_ref + sea_level)
-
 # Set noise parameters
 params = {
     "offset" : offset,
@@ -115,6 +110,11 @@ params_sealevel = {
     "persistence" : 1,
     "lacunarity" : 2,
 }
+
+if sea_level_variations != 0.0:
+    sea_ybase = np.random.randint(8192)-4096
+    sea_level_ref = snoise2(time * (1-1/niter) / sea_level_variations, sea_ybase, **params_sealevel) * sea_level_variations
+    params['offset'] -= (sea_level_ref + sea_level)
 
 n = noisemap(mapsize+1, mapsize+1, **params)
 
