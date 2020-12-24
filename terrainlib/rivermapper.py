@@ -12,7 +12,19 @@ from collections import defaultdict
 # The algorithm here makes use of most of the paper's concepts, including the Planar Boruvka algorithm.
 # Only flow_local and accumulate_flow are custom algorithms.
 
-def flow_local(plist):
+# Define two different method for local flow routing
+def flow_local_steepest(plist):
+    vmax = 0.0
+    imax = 0.0
+    for i, p in enumerate(plist):
+        if p > vmax:
+            vmax = p
+            imax = i
+    if vmax > 0.0:
+        return imax+1
+    return 0
+
+def flow_local_semirandom(plist):
     """
     Determines a flow direction based on denivellation for every neighbouring node.
     Denivellation must be positive for downward and zero for flat or upward:
@@ -27,7 +39,16 @@ def flow_local(plist):
             return i+1
         r -= p
 
-def flow(dem):
+flow_local_methods = {
+    'steepest' : flow_local_steepest,
+    'semirandom' : flow_local_semirandom,
+}
+
+def flow(dem, method='semirandom'):
+    if method in flow_local_methods:
+        flow_local = flow_local_methods[method]
+    else:
+        raise KeyError('Flow method \'{}\' does not exist'.format(method))
 
     # Flow locally
     dirs1 = np.zeros(dem.shape, dtype=int)

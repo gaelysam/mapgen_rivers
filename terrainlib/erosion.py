@@ -54,7 +54,7 @@ def diffusion(dem, time, d=1):
     return im.gaussian_filter(dem, radius, mode='reflect') # Diffusive erosion is a simple Gaussian blur
 
 class EvolutionModel:
-    def __init__(self, dem, K=1, m=0.5, d=1, sea_level=0, flow=False, flex_radius=100):
+    def __init__(self, dem, K=1, m=0.5, d=1, sea_level=0, flow=False, flex_radius=100, flow_method='semirandom'):
         self.dem = dem
         #self.bedrock = dem
         self.K = K
@@ -63,6 +63,8 @@ class EvolutionModel:
         self.sea_level = sea_level
         self.flex_radius = flex_radius
         self.define_isostasy()
+        self.flow_method = flow_method
+        #set_flow_method(flow_method)
         if flow:
             self.calculate_flow()
         else:
@@ -72,7 +74,7 @@ class EvolutionModel:
             self.flow_uptodate = False
 
     def calculate_flow(self):
-        self.dirs, self.lakes, self.rivers = flow(self.dem)
+        self.dirs, self.lakes, self.rivers = flow(self.dem, method=self.flow_method)
         self.flow_uptodate = True
 
     def advection(self, time):

@@ -87,6 +87,7 @@ sea_level = float(get_setting('sea_level', 0.0))
 sea_level_variations = float(get_setting('sea_level_variations', 0.0))
 sea_level_variations_time = float(get_setting('sea_level_variations_time', 1.0))
 flex_radius = float(get_setting('flex_radius', 20.0))
+flow_method = get_setting('flow_method', 'semirandom')
 
 time = float(get_setting('time', 10.0))
 niter = int(get_setting('niter', 10))
@@ -120,7 +121,7 @@ n = noisemap(mapsize+1, mapsize+1, **params)
 ### COMPUTE LANDSCAPE EVOLUTION
 # Initialize landscape evolution model
 print('Initializing model')
-model = terrainlib.EvolutionModel(n, K=K, m=m, d=d, sea_level=sea_level, flex_radius=flex_radius)
+model = terrainlib.EvolutionModel(n, K=K, m=m, d=d, sea_level=sea_level, flex_radius=flex_radius, flow_method=flow_method)
 terrainlib.update(model.dem, model.lakes, t=5, sea_level=model.sea_level, title='Initializing...')
 
 dt = time/niter

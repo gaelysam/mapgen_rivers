@@ -78,6 +78,7 @@ Other parameters can be specified by `--parameter value`. Syntax `--parameter=va
 | `niter`       | Number of iterations. Each iteration represents a time `time/niter`. | `--niter 10` |
 | `sea_level_variations` | Amplitude of sea level variations throughout the simulation (if any). | `--sea_level_variations 10` |
 | `sea_level_variations_time` | Characteristic time of variation for sea level, in the same units than `time`. Increasing it will result in slower variations between iterations. | `--sea_level_variations_time 1` |
+| `flow_method` | Algorithm used for local flow calculation. Possible values are `steepest` (every node flows toward the steepest neighbour when possible), and `semirandom` (default, flow direction is determined randomly between lower neighbours, with lowest ones having greater probability). | `--flow_method semirandom` |
 | | **Alternatives** |
 | `config`      | Another way to specify configuration file | `--config terrain_higher.conf` |
 | `output`      | Another way to specify output dir | `--output ~/.minetest/worlds/my_world/river_data` |
