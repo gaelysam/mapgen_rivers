@@ -29,7 +29,7 @@ def noisemap(X, Y, scale=0.01, vscale=1.0, offset=0.0, log=False, **params):
 ### PARSE COMMAND-LINE ARGUMENTS
 argc = len(sys.argv)
 
-config_file = 'terrain.conf'
+config_file = 'terrain_default.conf'
 output_dir = 'river_data'
 params_from_args = {}
 i = 1 # Index of arguments
@@ -80,9 +80,9 @@ offset = float(get_setting('offset', 0.0))
 persistence = float(get_setting('persistence', 0.6))
 lacunarity = float(get_setting('lacunarity', 2.0))
 
-K = float(get_setting('K', 1.0))
-m = float(get_setting('m', 0.35))
-d = float(get_setting('d', 0.2))
+K = float(get_setting('K', 0.5))
+m = float(get_setting('m', 0.5))
+d = float(get_setting('d', 0.5))
 sea_level = float(get_setting('sea_level', 0.0))
 sea_level_variations = float(get_setting('sea_level_variations', 0.0))
 sea_level_variations_time = float(get_setting('sea_level_variations_time', 1.0))
