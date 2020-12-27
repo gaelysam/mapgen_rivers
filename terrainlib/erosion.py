@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.ndimage as im
+import scipy.signal as si
 from .rivermapper import flow
 
 def advection(dem, dirs, rivers, time, K=1, m=0.5, sea_level=0):
@@ -47,11 +48,31 @@ def advection(dem, dirs, rivers, time, K=1, m=0.5, sea_level=0):
 
     return dem_new
 
-def diffusion(dem, time, d=1):
-    radius = d * time**.5
-    if radius == 0:
-        return dem
-    return im.gaussian_filter(dem, radius, mode='reflect') # Diffusive erosion is a simple Gaussian blur
+second_derivative_matrix = np.array([
+    [0., 0.25, 0.],
+    [0.25,-1., 0.25],
+    [0., 0.25, 0.],
+])
+
+diff_max = 1.0
+
+def diffusion(dem, time, d=1.0):
+    if isinstance(d, np.ndarray):
+        dmax = d.max()
+    else:
+        dmax = d
+    diff = time * dmax
+    print(diff)
+    niter = int(diff//diff_max) + 1
+    ddiff = d * (time / niter)
+
+    #print('{:d} iterations'.format(niter))
+    for i in range(niter):
+        dem[1:-1,1:-1] += si.convolve2d(dem, second_derivative_matrix, mode='valid') * ddiff
+        #print('iteration {:d}'.format(i+1))
+
+    return dem
+    #return im.gaussian_filter(dem, radius, mode='reflect') # Diffusive erosion is a simple Gaussian blur
 
 class EvolutionModel:
     def __init__(self, dem, K=1, m=0.5, d=1, sea_level=0, flow=False, flex_radius=100, flow_method='semirandom'):
@@ -59,7 +80,10 @@ class EvolutionModel:
         #self.bedrock = dem
         self.K = K
         self.m = m
-        self.d = d
+        if isinstance(d, np.ndarray):
+            self.d = d[1:-1,1:-1]
+        else:
+            self.d = d
         self.sea_level = sea_level
         self.flex_radius = flex_radius
         self.define_isostasy()

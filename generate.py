@@ -172,7 +172,7 @@ K_map = noisemap(mapsize+1, mapsize+1, **params_K).get2d()
 ### COMPUTE LANDSCAPE EVOLUTION
 # Initialize landscape evolution model
 print('Initializing model')
-model = terrainlib.EvolutionModel(n, K=K_map, m=m_map, d=d, sea_level=sea_level, flex_radius=flex_radius, flow_method=flow_method)
+model = terrainlib.EvolutionModel(n, K=K_map, m=m_map, d=K_map, sea_level=sea_level, flex_radius=flex_radius, flow_method=flow_method)
 terrainlib.update(model.dem, model.lakes, t=5, sea_level=model.sea_level, title='Initializing...')
 
 dt = time/niter
