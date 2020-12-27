@@ -148,12 +148,12 @@ params_K = {
 
 params_m = {
     "offset" : m,
-    "vscale" : m*0.5,
+    "vscale" : m*0.2,
     "scale" : 400,
     "octaves" : 1,
     "persistence" : 0.5,
     "lacunarity" : 2,
-    "log" : True,
+    "log" : False,
 }
 
 if sea_level_variations != 0.0:
